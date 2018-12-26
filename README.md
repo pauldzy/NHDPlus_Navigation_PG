@@ -22,7 +22,7 @@ While I have never seen the source code for the desktop tools, I contend through
 
 #### NLDI Navigation
 
-Beginning around 2016 USGS spearheaded the creation of the [Hydro Network Linked Data Index (NLDI)](https://cida.usgs.gov/nldi/about).  As a core component of the system is network navigation, the NLDI team under Dave Blodgett at USGS reimplemented NHDPlus network navigation.  While they started with the aforementioned EPA PostgreSQL version of Classic logic navigation, the NLDI team sought to leverage PostgreSQL recursion techniques and more powerful cloud servers to return user results quicker.
+Beginning around 2016 USGS spearheaded the creation of the [Hydro Network Linked Data Index (NLDI)](https://cida.usgs.gov/nldi/about).  As a core component of the system is network navigation, the NLDI team under Dave Blodgett at USGS reimplemented NHDPlus network navigation.  While Classic logic is still available within NLDI when using the legacy=true parameter, the NLDI team sought to leverage PostgreSQL recursion techniques and more powerful cloud servers via a full logic rewrite.
 
 The resulting NLDI services use a PostgreSQL backend with a Java middleware component.  The source code is [hosted on GitHUB](https://github.com/ACWI-SSWD/nldi-services).  Special attention should be paid to the [navigation query SQL](https://github.com/ACWI-SSWD/nldi-services/blob/master/src/main/resources/mybatis/navigate.xml).
 
