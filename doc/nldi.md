@@ -2,13 +2,17 @@
 
 #### General
 
-NLDI navigation does not make use of the information in the plusflow table.  Thus certain flow relationships which cannot be expressed in the plusflowlinevaa table are not available to this logic.  
+As previously noted, NLDI does provide classic navigation logic via the legacy=true parameter which is documented on the [NLDI OpenAPI documentation](https://cida.usgs.gov/nldi/swagger-ui.html#!/network-controller/getFlowlinesUsingGET_1).  "NLDI navigation logic" in this discussion does not include the legacy code.
 
-NLDI implements a nice caching system to avoid rerunning the navigation for subsequent calls.  This project largely ignores this aspect but having the cache is a helpful performance boost.
+NLDI navigation does not make use of the information in the plusflow table.  Thus certain flow relationships which cannot be expressed in the plusflowlinevaa table are not available to this logic.  
 
 #### Upstream with Tributaries
 
 [code reference](https://github.com/ACWI-SSWD/nldi-services/blob/b7354ed2b6a3be0376c35dae7ff8c4b8626f61d3/src/main/resources/mybatis/navigate.xml#L140-L155)
+
+UT NLDI Navigation uses Postgresql recursion to determine upstream linkage by identifying flowlines having a downstream hydrosequence or downstream minor hydrosequence match.  Thus NLDI does *not* account for situations with more two drains and in cases with more than two drains actually will make one upstream match.  
+
+Postgresql recursion as an algorithm is fast and dumb.  As such there is no way within the SQL interface to avoid recursing the same flowlines multiple times.  Thus NLDI UT logic is suseptible to memory and processor problems when the upstream path braids back upon itself.
 
 #### Upstream Mainline
 
@@ -24,5 +28,5 @@ NLDI implements a nice caching system to avoid rerunning the navigation for subs
 
 #### Point to Point
 
-Point to Point NLDI navigation is the same logic as unbounded Downstream Mainline navigation but with a brake to truncate results when the desired downstream flowline is encountered.
+All calls to point to point navigation in NLDI are shunted to the legacy codebase.  So there is no unique point to point NLDI logic.
 
