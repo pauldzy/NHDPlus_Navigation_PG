@@ -24,6 +24,7 @@ Some observers might think this is easily prevented using a running array as don
 * E only knows it came from M from A
 * F from E from M from A
 * onward...
+
 The two encounters of F have no way to know that the other has already traversed it.  
 
 I don't have a easy solution for the above problem short of keeping recursive queries to a size that works with available memory (generally around 10,000 flowlines).  I have tried emulating the recursive logic in PL/pgSQL to add more logic and it works swell, though about ten times slower than native recursion.  I suspect the solution is the same as that undertaken by the pgRouting project, code our own custom query engine in C as a PostgreSQL extension.
