@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION nhdplus_navigation30.distance_dd(
+CREATE OR REPLACE FUNCTION nhdplus_navigation30.nav_dd_calc(
     IN  pStartHydroSequence       INTEGER
    ,IN  pRecOrder                 INTEGER
    ,IN  pStartDistanceKm          NUMERIC
@@ -382,7 +382,7 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION nhdplus_navigation30.distance_dd(
+ALTER FUNCTION nhdplus_navigation30.nav_dd_calc(
     INTEGER
    ,INTEGER
    ,NUMERIC
@@ -391,7 +391,7 @@ ALTER FUNCTION nhdplus_navigation30.distance_dd(
    ,NUMERIC   
 ) OWNER TO nhdplus_navigation30;
 
-GRANT EXECUTE ON FUNCTION nhdplus_navigation30.distance_dd(
+GRANT EXECUTE ON FUNCTION nhdplus_navigation30.nav_dd_calc(
     INTEGER
    ,INTEGER
    ,NUMERIC
