@@ -108,6 +108,9 @@ BEGIN
             a.nhdplus_comid        = p_comid
          OR a.permanent_identifier = p_permanent_identifier
          OR a.hydroseq             = p_hydrosequence;
+
+         p_flowline.out_lengthkm           := p_flowline.lengthkm;
+         p_flowline.out_flowtimeday        := p_flowline.flowtimeday;
          
          IF str_direction = 'D'
          THEN
@@ -281,6 +284,9 @@ BEGIN
                (str_direction = 'D' AND a.tmeasure = 100)
             OR (str_direction = 'U' AND a.fmeasure = 0 )
          );
+         
+         p_flowline.out_lengthkm           := p_flowline.lengthkm;
+         p_flowline.out_flowtimeday        := p_flowline.flowtimeday;
          
          IF str_direction = 'D'
          THEN

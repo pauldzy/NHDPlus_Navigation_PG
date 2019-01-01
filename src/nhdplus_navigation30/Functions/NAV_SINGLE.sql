@@ -100,7 +100,7 @@ BEGIN
       ,num_init_flowtimeday
       ,0
    );
-   
+
    ----------------------------------------------------------------------------
    -- Step 90
    -- Insert the initial flowline and tag the running counts
