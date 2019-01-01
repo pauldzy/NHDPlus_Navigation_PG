@@ -88,10 +88,6 @@ BEGIN
                 mq.force_main_line IS TRUE
             AND mq.dnhydroseq  = um.hydroseq
          )
-         OR (
-            --- Port Allen Bayou 4 way intersection --
-            mq.hydroseq = 350002946 AND um.hydroseq = 350002941
-         )
       )
       AND (
             num_maximum_distance_km IS NULL
