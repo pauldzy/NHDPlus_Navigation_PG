@@ -25,7 +25,7 @@ BEGIN
          ,flowtimeday                 NUMERIC
          ,network_distancekm          NUMERIC
          ,network_flowtimeday         NUMERIC
-         ,dnminorhyd                  INTEGER
+         ,downhydrosequence           INTEGER
          ,nav_order                   INTEGER
       );
 
@@ -42,7 +42,7 @@ BEGIN
       ON tmp_navigation_working30(network_flowtimeday);
       
       CREATE INDEX tmp_navigation_working30_03i
-      ON tmp_navigation_working30(dnminorhyd);
+      ON tmp_navigation_working30(downhydrosequence);
       
    END IF;
 

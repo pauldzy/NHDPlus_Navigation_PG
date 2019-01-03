@@ -18,6 +18,7 @@ CREATE MATERIALIZED VIEW nhdplus_navigation30.plusflowlinevaa_nav(
    ,fromnode
    ,tonode
    ,force_main_line
+   ,ary_upstream_hydroseq
    ,ary_downstream_hydroseq
 )
 TABLESPACE nhdplus_data
@@ -144,6 +145,7 @@ SELECT
  ELSE
    FALSE
  END AS force_main_line
+,ARRAY(SELECT b.fromhydroseq FROM nhdplus.plusflow_np21 b WHERE b.tohydroseq = a.hydroseq) AS ary_upstream_hydroseq
 ,CASE
  WHEN a.dndraincount = 1
  THEN
@@ -153,7 +155,7 @@ SELECT
    ARRAY[a.dnhydroseq,a.dnminorhyd]
  WHEN a.dndraincount > 2
  THEN
-   ARRAY(SELECT b.tohydroseq FROM nhdplus.plusflow_np21 b WHERE b.fromhydroseq = a.hydroseq)
+   ARRAY(SELECT c.tohydroseq FROM nhdplus.plusflow_np21 c WHERE c.fromhydroseq = a.hydroseq)
  ELSE
    NULL
  END AS ary_downstream_hydroseq
@@ -211,7 +213,11 @@ CREATE INDEX plusflowlinevaa_nav_09i
 ON nhdplus_navigation30.plusflowlinevaa_nav(force_main_line)
 TABLESPACE nhdplus_data;
 
-CREATE INDEX plusflowlinevaa_nav_gin
+CREATE INDEX plusflowlinevaa_nav_gn1
+ON nhdplus_navigation30.plusflowlinevaa_nav USING GIN(ary_upstream_hydroseq gin__int_ops)
+TABLESPACE nhdplus_data;
+
+CREATE INDEX plusflowlinevaa_nav_gn2
 ON nhdplus_navigation30.plusflowlinevaa_nav USING GIN(ary_downstream_hydroseq gin__int_ops)
 TABLESPACE nhdplus_data;
 

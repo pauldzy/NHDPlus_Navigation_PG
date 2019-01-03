@@ -1,10 +1,11 @@
 CREATE OR REPLACE FUNCTION nhdplus_navigation30.nav_dd_calc(
-    IN  pStartHydroSequence       INTEGER
-   ,IN  pRecOrder                 INTEGER
-   ,IN  pStartDistanceKm          NUMERIC
-   ,IN  pStartFlowTimeDay         NUMERIC
-   ,IN  pMaxDistanceKm            NUMERIC DEFAULT NULL
-   ,IN  pMaxFlowTimeDay           NUMERIC DEFAULT NULL
+    IN  int_start_hydrosequence   INTEGER
+   ,IN  int_rec_order             INTEGER
+   ,IN  num_start_distance_km     NUMERIC
+   ,IN  num_start_flowtime_day    NUMERIC
+   ,IN  obj_start_flowline        nhdplus_navigation30.flowline         
+   ,IN  num_maximum_distance_km   NUMERIC
+   ,IN  num_maximum_flowtime_day  NUMERIC
 ) RETURNS INTEGER
 VOLATILE
 AS $BODY$
@@ -32,9 +33,7 @@ BEGIN
       CREATE TEMPORARY TABLE tmp_dd30_work(
           comid                       INTEGER
          ,hydroseq                    INTEGER
-         ,levelpathid                 INTEGER
          ,dnhydroseq                  INTEGER
-         ,dnminorhyd                  INTEGER
          ,fmeasure                    NUMERIC
          ,tmeasure                    NUMERIC
          ,lengthkm                    NUMERIC
@@ -46,9 +45,6 @@ BEGIN
       
       CREATE INDEX tmp_dd30_work_01i
       ON tmp_dd30_work(hydroseq);
-      
-      CREATE INDEX tmp_dd30_work_02i
-      ON tmp_dd30_work(dnminorhyd);
 
    END IF;
    
@@ -64,9 +60,7 @@ BEGIN
       CREATE TEMPORARY TABLE tmp_dd30_inter(
           comid                       INTEGER
          ,hydroseq                    INTEGER
-         ,levelpathid                 INTEGER
          ,dnhydroseq                  INTEGER
-         ,dnminorhyd                  INTEGER
          ,fmeasure                    NUMERIC
          ,tmeasure                    NUMERIC
          ,lengthkm                    NUMERIC
@@ -89,42 +83,69 @@ BEGIN
       FROM
       tmp_navigation_working30 a
    ) INTO ary_stack;
-   
+
    ----------------------------------------------------------------------------
    -- Step 40
    -- Load the starter record
    ----------------------------------------------------------------------------
-   INSERT INTO tmp_dd30_work(
-       comid
-      ,hydroseq
-      ,levelpathid
-      ,dnhydroseq
-      ,dnminorhyd
-      ,fmeasure
-      ,tmeasure
-      ,lengthkm
-      ,flowtimeday
-      ,network_distancekm
-      ,network_flowtimeday
-      ,nav_order
-   )
-   SELECT
-    rc.comid
-   ,rc.hydroseq
-   ,rc.levelpathid
-   ,rc.dnhydroseq
-   ,rc.dnminorhyd
-   ,rc.fmeasure
-   ,rc.tmeasure
-   ,rc.lengthkm
-   ,rc.travtime
-   ,rc.lengthkm + pStartDistanceKm
-   ,rc.travtime + pStartFlowTimeDay
-   ,pRecOrder + 1
-   FROM
-   nhdplus_navigation30.plusflowlinevaa_nav rc
-   WHERE
-   rc.hydroseq = pStartHydroSequence;
+   IF int_start_hydrosequence IS NULL
+   THEN
+      INSERT INTO tmp_dd30_work(
+          comid
+         ,hydroseq
+         ,dnhydroseq
+         ,fmeasure
+         ,tmeasure
+         ,lengthkm
+         ,flowtimeday
+         ,network_distancekm
+         ,network_flowtimeday
+         ,nav_order
+      )
+      SELECT
+       obj_start_flowline.comid
+      ,obj_start_flowline.hydrosequence
+      ,obj_start_flowline.downhydrosequence
+      ,obj_start_flowline.fmeasure
+      ,obj_start_flowline.out_measure
+      ,obj_start_flowline.out_lengthkm
+      ,obj_start_flowline.out_flowtimeday
+      ,obj_start_flowline.out_pathlengthkm
+      ,obj_start_flowline.out_pathflowtimeday
+      ,int_rec_order + 1;
+      
+      int_start_hydrosequence := obj_start_flowline.hydrosequence;
+
+   ELSE
+      INSERT INTO tmp_dd30_work(
+          comid
+         ,hydroseq
+         ,dnhydroseq
+         ,fmeasure
+         ,tmeasure
+         ,lengthkm
+         ,flowtimeday
+         ,network_distancekm
+         ,network_flowtimeday
+         ,nav_order
+      )
+      SELECT
+       rc.comid
+      ,rc.hydroseq
+      ,rc.dnhydroseq
+      ,rc.fmeasure
+      ,rc.tmeasure
+      ,rc.lengthkm
+      ,rc.travtime
+      ,rc.lengthkm + num_start_distance_km
+      ,rc.travtime + num_start_flowtime_day
+      ,int_rec_order + 1
+      FROM
+      nhdplus_navigation30.plusflowlinevaa_nav rc
+      WHERE
+      rc.hydroseq = int_start_hydrosequence;
+      
+   END IF;
    
    GET DIAGNOSTICS int_updated = ROW_COUNT;
    
@@ -134,14 +155,14 @@ BEGIN
       
    END IF;
    
-   ary_stack := array_append(ary_stack,pStartHydroSequence);
+   ary_stack := array_append(ary_stack,int_start_hydrosequence);
 
    ----------------------------------------------------------------------------
    -- Step 50
    -- Start the loop
    ----------------------------------------------------------------------------
    int_analyze        := 1;
-   int_depth          := pRecOrder + 2;
+   int_depth          := int_rec_order + 2;
    int_final_counter  := 0;
    int_universe_count := 1;
    int_sanity         := 5000;
@@ -166,9 +187,7 @@ BEGIN
          SELECT
           mq.comid
          ,mq.hydroseq
-         ,mq.levelpathid
          ,mq.dnhydroseq
-         ,mq.dnminorhyd
          ,mq.fmeasure
          ,mq.tmeasure
          ,mq.lengthkm
@@ -182,12 +201,12 @@ BEGIN
          WHERE
              mq.hydroseq = dd.dnhydroseq
          AND (
-               pMaxDistanceKm IS NULL
-            OR dd.network_distancekm <= pMaxDistanceKm
+               num_maximum_distance_km IS NULL
+            OR dd.network_distancekm <= num_maximum_distance_km
          )
          AND (
-               pMaxFlowTimeDay IS NULL
-            OR dd.network_flowtimeday <= pMaxFlowTimeDay
+               num_maximum_flowtime_day IS NULL
+            OR dd.network_flowtimeday <= num_maximum_flowtime_day
          )
          AND NOT mq.hydroseq = ANY(ary_stack) 
       LOOP
@@ -202,9 +221,7 @@ BEGIN
             INSERT INTO tmp_dd30_inter(
                 comid
                ,hydroseq
-               ,levelpathid
                ,dnhydroseq
-               ,dnminorhyd
                ,fmeasure
                ,tmeasure
                ,lengthkm
@@ -215,9 +232,7 @@ BEGIN
             ) VALUES (
                 rec.comid
                ,rec.hydroseq
-               ,rec.levelpathid
                ,rec.dnhydroseq
-               ,rec.dnminorhyd
                ,rec.fmeasure
                ,rec.tmeasure
                ,rec.lengthkm
@@ -239,9 +254,7 @@ BEGIN
          SELECT
           mq.comid
          ,mq.hydroseq
-         ,mq.levelpathid
          ,mq.dnhydroseq
-         ,mq.dnminorhyd
          ,mq.fmeasure
          ,mq.tmeasure
          ,mq.lengthkm
@@ -252,15 +265,17 @@ BEGIN
          nhdplus_navigation30.plusflowlinevaa_nav mq
          CROSS JOIN
          tmp_dd30_work dd
-         WHERE
-             dd.dnminorhyd  = mq.hydroseq
-         AND (
-               pMaxDistanceKm IS NULL
-            OR dd.network_distancekm <= pMaxDistanceKm
+         WHERE (
+                mq.hydroseq <> dd.dnhydroseq 
+            AND mq.ary_upstream_hydroseq @> ARRAY[dd.hydroseq] 
          )
          AND (
-               pMaxFlowTimeDay IS NULL
-            OR dd.network_flowtimeday <= pMaxFlowTimeDay
+               num_maximum_distance_km IS NULL
+            OR dd.network_distancekm <= num_maximum_distance_km
+         )
+         AND (
+               num_maximum_flowtime_day IS NULL
+            OR dd.network_flowtimeday <= num_maximum_flowtime_day
          )
          AND NOT mq.hydroseq = ANY(ary_stack)  
       LOOP
@@ -275,9 +290,7 @@ BEGIN
             INSERT INTO tmp_dd30_inter(
                 comid
                ,hydroseq
-               ,levelpathid
                ,dnhydroseq
-               ,dnminorhyd
                ,fmeasure
                ,tmeasure
                ,lengthkm
@@ -288,9 +301,7 @@ BEGIN
             ) VALUES (
                 rec.comid
                ,rec.hydroseq
-               ,rec.levelpathid
                ,rec.dnhydroseq
-               ,rec.dnminorhyd
                ,rec.fmeasure
                ,rec.tmeasure
                ,rec.lengthkm
@@ -387,6 +398,7 @@ ALTER FUNCTION nhdplus_navigation30.nav_dd_calc(
    ,INTEGER
    ,NUMERIC
    ,NUMERIC
+   ,nhdplus_navigation30.flowline
    ,NUMERIC
    ,NUMERIC   
 ) OWNER TO nhdplus_navigation30;
@@ -396,6 +408,7 @@ GRANT EXECUTE ON FUNCTION nhdplus_navigation30.nav_dd_calc(
    ,INTEGER
    ,NUMERIC
    ,NUMERIC
+   ,nhdplus_navigation30.flowline
    ,NUMERIC
    ,NUMERIC
 )  TO PUBLIC;

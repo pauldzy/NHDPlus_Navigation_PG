@@ -20,12 +20,13 @@ BEGIN
    AND num_maximum_flowtime_day IS NULL
    THEN
       int_count = nhdplus_navigation30.nav_dd_calc(
-          pStartHydroSequence := obj_start_flowline.hydrosequence
-         ,pRecOrder           := -1
-         ,pStartDistanceKm    := obj_start_flowline.out_lengthkm
-         ,pStartFlowTimeDay   := obj_start_flowline.out_flowtimeday
-         ,pMaxDistanceKm      := NULL
-         ,pMaxFlowTimeDay     := NULL
+          int_start_hydrosequence  := NULL
+         ,int_rec_order            := -1
+         ,num_start_distance_km    := NULL
+         ,num_start_flowtime_day   := NULL
+         ,obj_start_flowline       := obj_start_flowline
+         ,num_maximum_distance_km  := NULL
+         ,num_maximum_flowtime_day := NULL
       );
    
    ----------------------------------------------------------------------------
@@ -37,7 +38,6 @@ BEGIN
           comid
          ,hydroseq
          ,dnhydroseq
-         ,dnminorhyd
          ,terminalpathid
          ,fmeasure
          ,tmeasure
@@ -54,7 +54,6 @@ BEGIN
           obj_start_flowline.comid
          ,obj_start_flowline.hydrosequence
          ,obj_start_flowline.downhydrosequence
-         ,obj_start_flowline.dnminorhydrosequence
          ,obj_start_flowline.terminalpathid
          ,obj_start_flowline.fmeasure
          ,obj_start_flowline.out_measure
@@ -70,7 +69,6 @@ BEGIN
           mq.comid
          ,mq.hydroseq
          ,mq.dnhydroseq
-         ,mq.dnminorhyd
          ,mq.terminalpathid
          ,mq.fmeasure
          ,mq.tmeasure
@@ -106,7 +104,7 @@ BEGIN
          ,flowtimeday
          ,network_distancekm
          ,network_flowtimeday
-         ,dnminorhyd
+         ,downhydrosequence
          ,nav_order
       )
       SELECT
@@ -118,20 +116,19 @@ BEGIN
       ,a.flowtimeday
       ,a.network_distancekm
       ,a.network_flowtimeday
-      ,a.dnminorhyd
+      ,a.dnhydroseq
       ,a.nav_order
       FROM
       dm a;
       
       GET DIAGNOSTICS int_count = ROW_COUNT;
-            
+
       -------------------------------------------------------------------
       -- Extract the divergences off the mainline
       -------------------------------------------------------------------
       FOR r IN 
          SELECT 
-          a.comid
-         ,a.hydroseq
+          a.hydroseq
          ,MAX(b.network_distancekm)  AS start_distancekm
          ,MAX(b.network_flowtimeday) AS start_flowtimeday
          ,MAX(b.nav_order) AS nav_order
@@ -139,8 +136,8 @@ BEGIN
          nhdplus_navigation30.plusflowlinevaa_nav a
          JOIN (
             SELECT
-             bb.comid
-            ,bb.dnminorhyd
+             bb.hydrosequence
+            ,bb.downhydrosequence
             ,bb.network_distancekm
             ,bb.network_flowtimeday
             ,bb.nav_order
@@ -148,17 +145,17 @@ BEGIN
             tmp_navigation_working30 bb
             UNION ALL
             SELECT
-             obj_start_flowline.comid
-            ,obj_start_flowline.dnminorhydrosequence
+             obj_start_flowline.hydrosequence
+            ,obj_start_flowline.downhydrosequence
             ,obj_start_flowline.out_lengthkm
             ,obj_start_flowline.out_flowtimeday
             ,10
          ) b
          ON
-         a.hydroseq = b.dnminorhyd
+             a.ary_upstream_hydroseq @> ARRAY[b.hydrosequence]
+         AND a.hydroseq <> b.downhydrosequence
          WHERE
-             b.dnminorhyd <> 0
-         AND NOT EXISTS (
+         NOT EXISTS (
             SELECT
             1
             FROM
@@ -167,19 +164,19 @@ BEGIN
             cc.hydrosequence = a.hydroseq
          )
          GROUP BY
-          a.comid
-         ,a.hydroseq
+         a.hydroseq
          ORDER BY
          MAX(b.nav_order)
       
       LOOP
          int_count := int_count + nhdplus_navigation30.nav_dd_calc(
-             pStartHydroSequence := r.hydroseq
-            ,pRecOrder           := r.nav_order
-            ,pStartDistanceKm    := r.start_distancekm
-            ,pStartFlowTimeDay   := r.start_flowtimeday
-            ,pMaxDistanceKm      := num_maximum_distance_km
-            ,pMaxFlowTimeDay     := num_maximum_flowtime_day
+             int_start_hydrosequence  := r.hydroseq
+            ,int_rec_order            := r.nav_order
+            ,num_start_distance_km    := r.start_distancekm
+            ,num_start_flowtime_day   := r.start_flowtimeday
+            ,obj_start_flowline       := NULL
+            ,num_maximum_distance_km  := num_maximum_distance_km
+            ,num_maximum_flowtime_day := num_maximum_flowtime_day
          );
 
       END LOOP;
