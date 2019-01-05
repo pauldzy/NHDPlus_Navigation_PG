@@ -169,14 +169,8 @@ BEGIN
          nhdplus_navigation30.plusflowlinevaa_nav mq
          CROSS JOIN
          ppdd
-         WHERE (
-            mq.hydroseq = ppdd.dnhydroseq
-            OR
-            (
-                   ppdd.dnminorhyd != 0
-               AND ppdd.dnminorhyd  = mq.hydroseq
-            )
-         )
+         WHERE
+             mq.ary_upstream_hydroseq @> ARRAY[ppdd.hydroseq] 
          AND mq.hydroseq >= obj_stop_flowline.hydrosequence
       )
       INSERT INTO tmp_network_working30(
