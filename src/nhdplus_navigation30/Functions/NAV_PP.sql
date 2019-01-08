@@ -323,8 +323,8 @@ BEGIN
       ,tmeasure            = obj_stop_flowline.tmeasure
       ,lengthkm            = obj_stop_flowline.out_lengthkm
       ,flowtimeday         = obj_stop_flowline.out_flowtimeday
-      ,network_distancekm  = a.network_distancekm  + obj_stop_flowline.out_lengthkm
-      ,network_flowtimeday = a.network_flowtimeday + obj_stop_flowline.out_flowtimeday
+      ,network_distancekm  = a.network_distancekm  + obj_stop_flowline.out_lengthkm    - a.lengthkm
+      ,network_flowtimeday = a.network_flowtimeday + obj_stop_flowline.out_flowtimeday - a.flowtimeday
       WHERE
       a.comid = obj_stop_flowline.comid;
    

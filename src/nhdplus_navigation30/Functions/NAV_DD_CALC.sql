@@ -110,8 +110,8 @@ BEGIN
       ,obj_start_flowline.out_measure
       ,obj_start_flowline.out_lengthkm
       ,obj_start_flowline.out_flowtimeday
-      ,obj_start_flowline.out_pathlengthkm
-      ,obj_start_flowline.out_pathflowtimeday
+      ,obj_start_flowline.out_lengthkm
+      ,obj_start_flowline.out_flowtimeday
       ,int_rec_order + 1;
       
       int_start_hydrosequence := obj_start_flowline.hydrosequence;
