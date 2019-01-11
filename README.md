@@ -6,7 +6,9 @@ This project seeks to more straight-forwardly categorize the various products an
 
 ### Meet the Family
 
-As 2018 comes to a close there are a number of applications and services which allow users to traverse the NHDPlus stream network.  For this project I am proposing a rough division into two main branches: "Classic" and "NLDI".  Navigators for each division differ in how they move around the NHDPlus network and most of the variance users will find derives from these differences.  The navigation v3.0 code provided as part of this project is a hybrid seeking the best of both logics and *perhaps* could spur some discussion on a more standard navigation logic.  Your feedback is most welcome.
+As 2018 comes to a close there are a number of applications and services which allow users to traverse the NHDPlus stream network.  For this project I am proposing a rough division into two main branches: "Classic" and "NLDI".  The term "Classic" is entirely my own and meant without irony and with respect.  I chose this term over the "legacy" term used for this logic by the NLDI project.  
+
+Navigators for each division differ in how they move around the NHDPlus network and most of the variance users will find derives from these differences.  The navigation v3.0 code provided as part of this project is a hybrid seeking the best of both logics and *perhaps* could spur some discussion on a more standard navigation logic.  Your feedback is most welcome.
 
 ##### Classic Navigation
 
