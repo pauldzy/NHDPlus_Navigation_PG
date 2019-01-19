@@ -38,7 +38,7 @@ While outside the scope of this project there are some other navigators out ther
 
 ## Discussion Topics
 
-1. [NHDPlus Navigation components](doc/components.md)
+1. [NHDPlus Source Datasets](doc/source_datasets.md)
 2. [Classic Navigation logic](doc/classic.md)
 3. [NLDI Navigation logic](doc/nldi.md)
 4. [WATERS Navigation v3.0 logic](doc/navigation30.md)
