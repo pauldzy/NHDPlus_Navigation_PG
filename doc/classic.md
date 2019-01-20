@@ -10,15 +10,22 @@ Secondly the overall approach is what I often term a "gulp and prune" logic wher
 
 #### Upstream Mainline
 
+* Load temporary table with all PlusFlowlineVAA records having a hydrosequence value greater than the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
+
 #### Upstream with Tributaries
 
+* Load temporary table with all PlusFlowlineVAA records having a hydrosequence value greater than the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
+
 #### Downstream Mainline
+
+* Load temporary table with all PlusFlowlineVAA records having a hydrosequence value less than the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
 
 #### Downstream with Divergences
 
 * Execute a full downstream mainline navigation from the start flowline
-* Load temporary table with all flowlines in VPU having a hydro sequence value less than or equal to the start flowline.
+* Load temporary table with all flowlines in VPU having a hydro sequence value less than or equal to the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
 * Mark flowlines having the same levelpathid and terminalpathid as the start flowline.
 
 #### Point to Point
 
+* Load temporary table with all PlusFlowlineVAA records having a hydrosequence value less than the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
