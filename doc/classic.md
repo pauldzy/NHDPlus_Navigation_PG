@@ -10,22 +10,44 @@ Secondly the overall approach is what I often term a "gulp and prune" logic wher
 
 #### Upstream Mainline
 
-* Load temporary table with all PlusFlowlineVAA records having a hydrosequence value greater than the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
+* Test if navigation occurs entirely within a single flowline due to limiter values.  Process such "shorty" navigation via a simple SQL statement clipping the single flowline as needed.
+
+* Load temporary table with all PlusFlowlineVAA records having a hydrosequence value greater than the start flowline from the VPU matching the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
+
+* Mark flowlines having the same level path id and terminal path id as the start flowline and a hydrosequence greater than the start flowline.  Limit as appropriate by distance or flowline.  Note the largest hydrosequence and it's level path id values from the set.
+
+* Using the level path id of the largest hydrosequence, iterate again marking flowlines having the same level path as the previous largest hydrosequence and the same terminal path id as the start flowline.  Limit again as appropriate by distance or flowline.  Again note the largest hydrosequence and it's level path id values from the set.
+
+* If headwater or limiter is met, cease iteration.  Otherwise continue moving upwards by level path id.
+
+...
+
+* Trim initial start flowline fmeasure value as needed accounting for the start measure. 
 
 #### Upstream with Tributaries
 
-* Load temporary table with all PlusFlowlineVAA records having a hydrosequence value greater than the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
+* Test if navigation occurs entirely within a single flowline due to limiter values.  Process such "shorty" navigation via a simple SQL statement clipping the single flowline as needed.
+
+* Load temporary table with all PlusFlowlineVAA records having a hydrosequence value greater than the start flowline from the VPU matching the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
 
 #### Downstream Mainline
 
-* Load temporary table with all PlusFlowlineVAA records having a hydrosequence value less than the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
+* Test if navigation occurs entirely within a single flowline due to limiter values.  Process such "shorty" navigation via a simple SQL statement clipping the single flowline as needed.
+
+* Load temporary table with all PlusFlowlineVAA records having a hydrosequence value less than the start flowline from the VPU matching the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
 
 #### Downstream with Divergences
 
+* Test if navigation occurs entirely within a single flowline due to limiter values.  Process such "shorty" navigation via a simple SQL statement clipping the single flowline as needed.
+
 * Execute a full downstream mainline navigation from the start flowline
-* Load temporary table with all flowlines in VPU having a hydro sequence value less than or equal to the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
+
+* Load temporary table with all flowlines in VPU having a hydro sequence value less than or equal to the start flowline from the VPU matching the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
+
 * Mark flowlines having the same levelpathid and terminalpathid as the start flowline.
 
 #### Point to Point
 
-* Load temporary table with all PlusFlowlineVAA records having a hydrosequence value less than the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
+* Test if navigation occurs entirely within a single flowline due to limiter values.  Process such "shorty" navigation via a simple SQL statement clipping the single flowline as needed.
+
+* Load temporary table with all PlusFlowlineVAA records having a hydrosequence value less than the start flowline from the VPU matching the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
