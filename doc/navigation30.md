@@ -62,4 +62,16 @@ WATERS Navigation V3.0 Downstream Mainline navigation is essentially the same as
 
 [code reference](https://github.com/pauldzy/NHDPlus_Navigation_PG/blob/315e42880e658b61e140b54d221fd86b9f47b786/src/nhdplus_navigation30/Functions/NAV_PP.sql#L1)
 
-WATERS Navigation V3.0 Point to Point navigation is a new take on the process that attempts to make the process work in a more reasonable manner to cover more usage scenarios.  The simplest scenario is one where point to point navigation moves downstream along the mainline from start to stop.  Easy enough.  But what if the stop lies on a divergence?  Or what if there are multiple paths possible down multiple divergences?  
+WATERS Navigation V3.0 Point to Point navigation is a new take on the process that attempts to make the process work in a more reasonable manner to cover more usage scenarios.  The simplest scenario is one where point to point navigation moves downstream along the mainline from start to stop.  Easy enough.  But what if the stop lies on a divergence?  Or what if there are multiple paths possible down multiple divergences to reach the stop location?
+
+1. Execute a downstream mainline search ceasing navigation at the hydrosequence value of the stop flowline.  Check if the stop flowline occurs within the results and if so, return results.  The general expectation is this will cover the majority of navigations.
+
+2. Otherwise execute a downstream with divergences navigation adding into result set a cost value of 1 for mainline and 100 for divergences.  Check if the stop flowline occurs within the results and if not, then return error code and message.
+
+3. Remove any duplicates created by the downstream with divergences navigation always preserving the lowest cost value.
+
+4. Use the PostgreSQL [pgRouting](https://pgrouting.org/) extension to perform a Dikstra shortest route graph search between the start and stop flowlines.
+
+5. Trim the start and stop flowlines as needed per requested measures
+
+6. Return results.
