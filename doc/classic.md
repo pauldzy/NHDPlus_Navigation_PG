@@ -48,6 +48,9 @@ Secondly the overall approach is what I often term a "gulp and prune" logic wher
 
 #### Point to Point
 
+Point to Point navigation via Classic logic has always been a bit of an odd duck.  The NHDPlus desktop navigators have never provided this capability and I have no recollection of where this requirement came from.  Classic point to point logic essentially executes a downstream mainline navigation which halts at the hydrosequence value of the stop flowline.  This may lead to some odd appearing results when the stop flowline occurs upon a minor tributary of the mainline.  Also the classic logic traditionally did not include coding to reverse the start and stop parameters when the user mixed up the inputs.    
+
 * Test if navigation occurs entirely within a single flowline due to limiter values.  Process such "shorty" navigation via a simple SQL statement clipping the single flowline as needed.
 
-* Load temporary table with all PlusFlowlineVAA records having a hydrosequence value less than the start flowline from the VPU matching the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
+* Load temporary table with all PlusFlowlineVAA records having a hydrosequence value less than the start flowline from the VPU matching the start flowline and a hydrosequence more than the stop flowline.  Hydrosequences are sequential between multiple VPUs so if the stop flowline is in a different VPU it all still works.  Exclude coastal flowlines or flowlines having a length of -9999.
+
