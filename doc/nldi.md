@@ -34,5 +34,5 @@ DM NLDI Navigation uses PostgreSQL recursion to determine the downstream mainlin
 
 #### Point to Point
 
-All calls to point to point navigation in NLDI are shunted to the legacy codebase.  So there is no unique point to point NLDI logic.
+All calls to point to point navigation in NLDI are shunted to the legacy codebase.  So there is no unique point to point NLDI logic.  It does appear that the current NLDI implementation at cida.usgs.gov is unable to process point to point navigation beyond a single VPU.  I have not looked close enough at the NLDI implementation to say why this happens.
 
