@@ -4,9 +4,9 @@ Classic navigation logic in 2019 may seem rather convoluted and hard to follow. 
 
 #### General
 
-I don't know the design considerations for classic navigation logic but one constraint was that navigation overall was limited to a single NHDPlus VPU to conserve computing resources.  So the logic to span VPU outputs is a complicating factor that the other logic branches simply do not need to address.  
+I don't know the design considerations for classic navigation logic but one constraint was that dynamic navigation was limited to a single NHDPlus VPU to conserve computing resources.  Cross-vpu navigation was then precached in static tables and integrated in a post navigation step.  So the logic to span VPU outputs is a complicating factor that the other logic branches simply do not need to address.
 
-Secondly the overall approach is what I often term a "gulp and prune" logic whereby a very large superset of the data is marshalled in a temporary table and then logic committed against that recordset.  It can make the code hard to follow as recordset selectors are adjusted before a final pruning.  If my explanations are lacking please enter an issue to prod me to better explain things.
+Secondly the overall approach is what I often term a "gulp, mark and prune" logic whereby a very large superset of the data is marshalled in a temporary table and then logic committed against that recordset.  It can make the code hard to follow as recordset selectors are adjusted before a final pruning.  If my explanations are lacking please enter an issue to prod me to better explain things.
 
 #### Upstream Mainline
 
@@ -18,9 +18,9 @@ Secondly the overall approach is what I often term a "gulp and prune" logic wher
 
 * Using the level path id of the largest hydrosequence, iterate again marking flowlines having the same level path as the previous largest hydrosequence and the same terminal path id as the start flowline.  Limit again as appropriate by distance or flowline.  Again note the largest hydrosequence and it's level path id values from the set.
 
-* If headwater or limiter is met, cease iteration.  Otherwise continue moving upwards by level path id.
+* If headwater, limiter, or VPU connection is met, cease iteration.  Otherwise continue moving upwards by level path id.
 
-...
+* Check if navigation reached a VPU connection, if so then continue navigating up the precached VPU extensions.  Add results into the final output.
 
 * Trim initial start flowline fmeasure value as needed accounting for the start measure. 
 
@@ -48,7 +48,7 @@ Secondly the overall approach is what I often term a "gulp and prune" logic wher
 
 #### Point to Point
 
-Point to Point navigation via Classic logic has always been a bit of an odd duck.  The NHDPlus desktop navigators have never provided this capability and I have no recollection of where this requirement came from.  Classic point to point logic essentially executes a downstream mainline navigation which halts at the hydrosequence value of the stop flowline.  This may lead to some odd appearing results when the stop flowline occurs upon a minor tributary of the mainline.  Also the classic logic traditionally did not include coding to reverse the start and stop parameters when the user mixed up the inputs.    
+Point to Point navigation via Classic logic has always been a bit of an odd duck.  The NHDPlus desktop navigators have never provided this capability and I have no recollection of where this requirement came from.  Classic point to point logic essentially executes a downstream mainline navigation which halts at the hydrosequence value of the stop flowline.  This may lead to some odd appearing results when the stop flowline occurs upon a minor tributary of the mainline.  
 
 * Test if navigation occurs entirely within a single flowline due to limiter values.  Process such "shorty" navigation via a simple SQL statement clipping the single flowline as needed.
 
