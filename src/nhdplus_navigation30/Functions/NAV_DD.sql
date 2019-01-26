@@ -7,8 +7,10 @@ VOLATILE
 AS $BODY$
 DECLARE
    
-   r         RECORD;
-   int_count INTEGER;
+   r                     RECORD;
+   int_count             INTEGER;
+   int_min_hydrosequence INTEGER;
+   int_min_levelpathid   INTEGER;
    
 BEGIN
 
@@ -27,6 +29,8 @@ BEGIN
          ,obj_start_flowline       := obj_start_flowline
          ,num_maximum_distance_km  := NULL
          ,num_maximum_flowtime_day := NULL
+         ,int_min_hydrosequence    := NULL
+         ,int_min_levelpathid      := NULL
       );
    
    ----------------------------------------------------------------------------
@@ -48,6 +52,7 @@ BEGIN
          ,base_pathlength
          ,base_pathtime
          ,nav_order
+         ,selected
       )
       AS (
          SELECT
@@ -64,6 +69,7 @@ BEGIN
          ,obj_start_flowline.pathlengthkm    + obj_start_flowline.out_lengthkm
          ,obj_start_flowline.pathflowtimeday + obj_start_flowline.out_flowtimeday
          ,0 AS nav_order
+         ,TRUE
          UNION
          SELECT
           mq.comid
@@ -79,6 +85,18 @@ BEGIN
          ,dm.base_pathlength -- base pathlength
          ,dm.base_pathtime
          ,dm.nav_order + 1000
+         ,CASE 
+          WHEN num_maximum_distance_km IS NULL
+          OR dm.network_distancekm <= num_maximum_distance_km
+          THEN
+            TRUE
+          WHEN num_maximum_flowtime_day IS NULL
+          OR dm.network_flowtimeday <= num_maximum_flowtime_day
+          THEN
+            TRUE
+          ELSE
+            FALSE
+          END AS selected
          FROM
          nhdplus_navigation30.plusflowlinevaa_nav mq
          CROSS JOIN
@@ -88,11 +106,11 @@ BEGIN
          AND mq.terminalpathid = dm.terminalpathid
          AND (
                num_maximum_distance_km IS NULL
-            OR dm.network_distancekm <= num_maximum_distance_km
+            OR dm.network_distancekm <= num_maximum_distance_km + 300
          )
          AND (
                num_maximum_flowtime_day IS NULL
-            OR dm.network_flowtimeday <= num_maximum_flowtime_day
+            OR dm.network_flowtimeday <= num_maximum_flowtime_day + 5
          )
       )
       INSERT INTO tmp_navigation_working30(
@@ -106,6 +124,7 @@ BEGIN
          ,network_flowtimeday
          ,downhydrosequence
          ,nav_order
+         ,selected
       )
       SELECT
        a.comid
@@ -118,11 +137,30 @@ BEGIN
       ,a.network_flowtimeday
       ,a.dnhydroseq
       ,a.nav_order
+      ,a.selected
       FROM
-      dm a;
+      dm a;      
       
       GET DIAGNOSTICS int_count = ROW_COUNT;
-
+      
+      SELECT 
+       a.hydroseq 
+      ,a.levelpathid
+      INTO
+       int_min_hydrosequence
+      ,int_min_levelpathid
+      FROM
+      nhdplus_navigation30.plusflowlinevaa_nav a
+      WHERE
+      a.hydroseq = (
+         SELECT
+         MIN(b.hydrosequence)
+         FROM
+         tmp_navigation_working30 b
+         WHERE
+         b.selected IS TRUE
+      );
+      
       -------------------------------------------------------------------
       -- Extract the divergences off the mainline
       -------------------------------------------------------------------
@@ -143,6 +181,8 @@ BEGIN
             ,bb.nav_order
             FROM
             tmp_navigation_working30 bb
+            WHERE
+            bb.selected IS TRUE
             UNION ALL
             SELECT
              obj_start_flowline.hydrosequence
@@ -177,6 +217,8 @@ BEGIN
             ,obj_start_flowline       := NULL
             ,num_maximum_distance_km  := num_maximum_distance_km
             ,num_maximum_flowtime_day := num_maximum_flowtime_day
+            ,int_min_hydrosequence    := int_min_hydrosequence
+            ,int_min_levelpathid      := int_min_levelpathid
          );
 
       END LOOP;

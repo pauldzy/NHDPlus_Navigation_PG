@@ -108,6 +108,7 @@ BEGIN
       ,network_distancekm
       ,network_flowtimeday
       ,nav_order
+      ,selected
    )
    SELECT
     a.comid
@@ -119,6 +120,7 @@ BEGIN
    ,a.network_distancekm
    ,a.network_flowtimeday
    ,a.nav_order
+   ,TRUE
    FROM
    um a
    ON CONFLICT DO NOTHING;
@@ -168,6 +170,7 @@ BEGIN
             ,network_distancekm
             ,network_flowtimeday
             ,nav_order
+            ,selected
          ) VALUES (
              r.comid
             ,r.hydroseq
@@ -178,6 +181,7 @@ BEGIN
             ,r.network_distancekm
             ,r.network_flowtimeday
             ,r.nav_order
+            ,TRUE
          );
    
          WITH RECURSIVE ut(
@@ -255,6 +259,7 @@ BEGIN
             ,network_distancekm
             ,network_flowtimeday
             ,nav_order
+            ,selected
          )
          SELECT
           a.comid
@@ -266,6 +271,7 @@ BEGIN
          ,a.network_distancekm
          ,a.network_flowtimeday
          ,a.nav_order
+         ,TRUE
          FROM
          ut a
          WHERE

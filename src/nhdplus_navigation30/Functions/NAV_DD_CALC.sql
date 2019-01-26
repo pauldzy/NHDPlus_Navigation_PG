@@ -6,6 +6,8 @@ CREATE OR REPLACE FUNCTION nhdplus_navigation30.nav_dd_calc(
    ,IN  obj_start_flowline        nhdplus_navigation30.flowline         
    ,IN  num_maximum_distance_km   NUMERIC
    ,IN  num_maximum_flowtime_day  NUMERIC
+   ,IN  int_min_hydrosequence     INTEGER
+   ,IN  int_min_levelpathid       INTEGER
 ) RETURNS INTEGER
 VOLATILE
 AS $BODY$
@@ -33,6 +35,7 @@ BEGIN
       CREATE TEMPORARY TABLE tmp_dd30_work(
           comid                       INTEGER
          ,hydroseq                    INTEGER
+         ,levelpathid                 INTEGER
          ,dnhydroseq                  INTEGER
          ,fmeasure                    NUMERIC
          ,tmeasure                    NUMERIC
@@ -60,6 +63,7 @@ BEGIN
       CREATE TEMPORARY TABLE tmp_dd30_inter(
           comid                       INTEGER
          ,hydroseq                    INTEGER
+         ,levelpathid                 INTEGER
          ,dnhydroseq                  INTEGER
          ,fmeasure                    NUMERIC
          ,tmeasure                    NUMERIC
@@ -93,6 +97,7 @@ BEGIN
       INSERT INTO tmp_dd30_work(
           comid
          ,hydroseq
+         ,levelpathid
          ,dnhydroseq
          ,fmeasure
          ,tmeasure
@@ -105,6 +110,7 @@ BEGIN
       SELECT
        obj_start_flowline.comid
       ,obj_start_flowline.hydrosequence
+      ,obj_start_flowline.levelpathid
       ,obj_start_flowline.downhydrosequence
       ,obj_start_flowline.fmeasure
       ,obj_start_flowline.out_measure
@@ -120,6 +126,7 @@ BEGIN
       INSERT INTO tmp_dd30_work(
           comid
          ,hydroseq
+         ,levelpathid
          ,dnhydroseq
          ,fmeasure
          ,tmeasure
@@ -132,6 +139,7 @@ BEGIN
       SELECT
        rc.comid
       ,rc.hydroseq
+      ,rc.levelpathid
       ,rc.dnhydroseq
       ,rc.fmeasure
       ,rc.tmeasure
@@ -171,13 +179,7 @@ BEGIN
    AND   int_sanity         > 0
    LOOP
    
-      IF int_universe_count - int_analyze > 1000
-      THEN
-         ANALYZE tmp_dd30_work;
-         
-         int_analyze := int_universe_count;
-         
-      END IF;
+      
       
    ----------------------------------------------------------------------------
    -- Step 60
@@ -187,6 +189,7 @@ BEGIN
          SELECT
           mq.comid
          ,mq.hydroseq
+         ,mq.levelpathid
          ,mq.dnhydroseq
          ,mq.fmeasure
          ,mq.tmeasure
@@ -208,6 +211,11 @@ BEGIN
                num_maximum_flowtime_day IS NULL
             OR dd.network_flowtimeday <= num_maximum_flowtime_day
          )
+         AND (
+               int_min_hydrosequence IS NULL
+            OR dd.levelpathid <> int_min_levelpathid
+            OR dd.hydroseq > int_min_hydrosequence
+         )
          AND NOT mq.hydroseq = ANY(ary_stack) 
       LOOP
 
@@ -221,6 +229,7 @@ BEGIN
             INSERT INTO tmp_dd30_inter(
                 comid
                ,hydroseq
+               ,levelpathid
                ,dnhydroseq
                ,fmeasure
                ,tmeasure
@@ -232,6 +241,7 @@ BEGIN
             ) VALUES (
                 rec.comid
                ,rec.hydroseq
+               ,rec.levelpathid
                ,rec.dnhydroseq
                ,rec.fmeasure
                ,rec.tmeasure
@@ -254,6 +264,7 @@ BEGIN
          SELECT
           mq.comid
          ,mq.hydroseq
+         ,mq.levelpathid
          ,mq.dnhydroseq
          ,mq.fmeasure
          ,mq.tmeasure
@@ -277,6 +288,11 @@ BEGIN
                num_maximum_flowtime_day IS NULL
             OR dd.network_flowtimeday <= num_maximum_flowtime_day
          )
+         AND (
+               int_min_hydrosequence IS NULL
+            OR dd.levelpathid <> int_min_levelpathid
+            OR dd.hydroseq > int_min_hydrosequence
+         )
          AND NOT mq.hydroseq = ANY(ary_stack)  
       LOOP
 
@@ -290,6 +306,7 @@ BEGIN
             INSERT INTO tmp_dd30_inter(
                 comid
                ,hydroseq
+               ,levelpathid
                ,dnhydroseq
                ,fmeasure
                ,tmeasure
@@ -301,6 +318,7 @@ BEGIN
             ) VALUES (
                 rec.comid
                ,rec.hydroseq
+               ,rec.levelpathid
                ,rec.dnhydroseq
                ,rec.fmeasure
                ,rec.tmeasure
@@ -329,6 +347,7 @@ BEGIN
          ,network_distancekm
          ,network_flowtimeday
          ,nav_order
+         ,selected
       )
       SELECT
        a.comid
@@ -340,6 +359,7 @@ BEGIN
       ,a.network_distancekm
       ,a.network_flowtimeday
       ,a.nav_order
+      ,TRUE
       FROM
       tmp_dd30_work a
       ON CONFLICT DO NOTHING;
@@ -400,7 +420,9 @@ ALTER FUNCTION nhdplus_navigation30.nav_dd_calc(
    ,NUMERIC
    ,nhdplus_navigation30.flowline
    ,NUMERIC
-   ,NUMERIC   
+   ,NUMERIC
+   ,INTEGER
+   ,INTEGER
 ) OWNER TO nhdplus_navigation30;
 
 GRANT EXECUTE ON FUNCTION nhdplus_navigation30.nav_dd_calc(
@@ -411,5 +433,7 @@ GRANT EXECUTE ON FUNCTION nhdplus_navigation30.nav_dd_calc(
    ,nhdplus_navigation30.flowline
    ,NUMERIC
    ,NUMERIC
+   ,INTEGER
+   ,INTEGER
 )  TO PUBLIC;
 

@@ -426,7 +426,8 @@ BEGIN
             ) aa
          )
          WHERE
-         a.network_distancekm > num_maximum_distance_km;
+             a.selected IS TRUE
+         AND a.network_distancekm > num_maximum_distance_km;
 
       ELSIF num_maximum_flowtime_day IS NOT NULL
       THEN
@@ -460,7 +461,8 @@ BEGIN
             ) aa
          )
          WHERE
-         a.network_flowtimeday > num_maximum_flowtime_day;
+             a.selected IS TRUE
+         AND a.network_flowtimeday > num_maximum_flowtime_day;
 
       END IF;
 
@@ -627,7 +629,8 @@ BEGIN
          ON
          aaa.comid = bbb.nhdplus_comid
          WHERE
-             aaa.fmeasure <> aaa.tmeasure
+             aaa.selected IS TRUE
+         AND aaa.fmeasure <> aaa.tmeasure
          AND aaa.fmeasure >= 0 AND aaa.fmeasure <= 100
          AND aaa.tmeasure >= 0 AND aaa.tmeasure <= 100
          AND aaa.lengthkm > 0

@@ -82,6 +82,7 @@ BEGIN
       ,network_distancekm
       ,network_flowtimeday
       ,nav_order
+      ,selected
    )
    SELECT
     a.comid
@@ -93,6 +94,7 @@ BEGIN
    ,a.network_distancekm
    ,a.network_flowtimeday
    ,a.nav_order
+   ,TRUE
    FROM
    ut a
    ON CONFLICT DO NOTHING;

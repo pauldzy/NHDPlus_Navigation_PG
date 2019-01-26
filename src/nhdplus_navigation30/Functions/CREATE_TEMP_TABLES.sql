@@ -27,6 +27,7 @@ BEGIN
          ,network_flowtimeday         NUMERIC
          ,downhydrosequence           INTEGER
          ,nav_order                   INTEGER
+         ,selected                    BOOLEAN
       );
 
       CREATE UNIQUE INDEX tmp_navigation_working30_pk
@@ -43,6 +44,9 @@ BEGIN
       
       CREATE INDEX tmp_navigation_working30_03i
       ON tmp_navigation_working30(downhydrosequence);
+      
+      CREATE INDEX tmp_navigation_working30_04i
+      ON tmp_navigation_working30(selected);
       
    END IF;
 

@@ -89,6 +89,7 @@ BEGIN
       ,network_distancekm
       ,network_flowtimeday
       ,nav_order
+      ,selected
    ) VALUES (
        obj_start_flowline.comid
       ,obj_start_flowline.hydrosequence
@@ -99,6 +100,7 @@ BEGIN
       ,num_init_lengthkm
       ,num_init_flowtimeday
       ,0
+      ,TRUE
    );
 
    ----------------------------------------------------------------------------

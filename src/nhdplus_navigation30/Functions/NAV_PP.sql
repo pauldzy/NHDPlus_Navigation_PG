@@ -79,6 +79,7 @@ BEGIN
       ,network_distancekm
       ,network_flowtimeday
       ,nav_order
+      ,selected
    )
    SELECT
     a.comid
@@ -90,6 +91,7 @@ BEGIN
    ,a.network_distancekm
    ,a.network_flowtimeday
    ,a.nav_order
+   ,TRUE
    FROM
    pp a;
    
@@ -252,6 +254,7 @@ BEGIN
             ,flowtimeday
             ,network_distancekm
             ,network_flowtimeday
+            ,selected
          )
          SELECT
           b.comid
@@ -262,6 +265,7 @@ BEGIN
          ,b.flowtimeday
          ,b.network_distancekm
          ,b.network_flowtimeday
+         ,TRUE
          FROM
          dijk a
          JOIN
@@ -280,6 +284,7 @@ BEGIN
             ,network_distancekm
             ,network_flowtimeday
             ,nav_order
+            ,selected
          ) VALUES (
              obj_start_flowline.comid
             ,obj_start_flowline.hydrosequence
@@ -290,6 +295,7 @@ BEGIN
             ,obj_start_flowline.out_lengthkm
             ,obj_start_flowline.out_flowtimeday
             ,0
+            ,TRUE
          );
          
          INSERT INTO tmp_navigation_working30(
@@ -302,6 +308,7 @@ BEGIN
             ,network_distancekm
             ,network_flowtimeday
             ,nav_order
+            ,selected
          ) VALUES (
              obj_stop_flowline.comid
             ,obj_stop_flowline.hydrosequence
@@ -311,7 +318,8 @@ BEGIN
             ,obj_stop_flowline.out_flowtimeday
             ,obj_start_flowline.out_pathlengthkm    - obj_stop_flowline.out_pathlengthkm
             ,obj_start_flowline.out_pathflowtimeday - obj_stop_flowline.out_pathflowtimeday
-            ,99999999                  
+            ,99999999
+            ,TRUE            
          );
          
       END IF;
@@ -334,7 +342,14 @@ BEGIN
    -- Step 20
    -- Return total count of results
    ----------------------------------------------------------------------------
-   SELECT COUNT(*) INTO int_count FROM tmp_navigation_working30;
+   SELECT 
+   COUNT(*) 
+   INTO int_count 
+   FROM 
+   tmp_navigation_working30 a
+   WHERE 
+   a.selected IS TRUE;
+   
    RETURN int_count;
 
 END;
