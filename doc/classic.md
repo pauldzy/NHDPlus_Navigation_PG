@@ -6,7 +6,9 @@ Classic navigation logic in 2019 may seem rather convoluted and hard to follow. 
 
 I don't know the design considerations for classic navigation logic but one constraint was that dynamic navigation was limited to a single NHDPlus VPU to conserve computing resources.  Cross-vpu navigation was then precached in static tables and integrated in a post navigation step.  So the logic to span VPU outputs is a complicating factor that the other logic branches simply do not need to address.
 
-Secondly the overall approach is what I often term a "gulp, mark and prune" logic whereby a very large superset of the data is marshalled in a temporary table and then logic committed against that recordset.  It can make the code hard to follow as recordset selectors are adjusted before a final pruning.  If my explanations are lacking please enter an issue to prod me to better explain things.
+Secondly the overall approach is what I often term a "gulp, mark and extract" logic whereby a very large superset of the data is marshalled in a temporary table and then logic committed against that recordset.  It can make the code hard to follow as recordset selectors are adjusted before a final extraction.  If my explanations are lacking please enter an issue to prod me to better explain things.
+
+Navigation in classic logic recurses level paths in the dataset.  While this provides a performance boost in many instances where level paths comprise thousands of flowlines, the shortcut is devalued by the need to check individual flowlines against limiters and recalculate the path time and length.  Overall it makes for a complicated logic.  The NLDI rewrite declined to follow this logic and I concur as my general feeling is with modern databases this boost is wash at best.  However it is worth emphasizing that fundmentally classic navigation is different from NLDI and WATERS v3.0 navigation in it's usage of level paths.
 
 #### Upstream Mainline
 
@@ -26,9 +28,13 @@ Secondly the overall approach is what I often term a "gulp, mark and prune" logi
 
 #### Upstream with Tributaries
 
-* Test if navigation occurs entirely within a single flowline due to limiter values.  Process such "shorty" navigation via a simple SQL statement clipping the single flowline as needed.
+* Run Upstream with Mainline to load the temporary table and determine the mainline upstream path.
 
-* Load temporary table with all PlusFlowlineVAA records having a hydrosequence value greater than the start flowline from the VPU matching the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
+* Iterate along the mainline loading a secondary temporary table with tributaries that then are used to mark those tributaries in the primary temporary table by their unique level path id.  Iterate until no other tributaries are found.  
+
+* Check if navigation reached a VPU connection, if so then continue navigating up the precached VPU extensions.  Add results into the final output.
+
+* Trim initial start flowline fmeasure value as needed accounting for the start measure. 
 
 #### Downstream Mainline
 
@@ -48,7 +54,7 @@ Secondly the overall approach is what I often term a "gulp, mark and prune" logi
 
 #### Point to Point
 
-Point to Point navigation via Classic logic has always been a bit of an odd duck.  The NHDPlus desktop navigators have never provided this capability and I have no recollection of where this requirement came from.  Classic point to point logic essentially executes a downstream mainline navigation which halts at the hydrosequence value of the stop flowline.  This may lead to some odd appearing results when the stop flowline occurs upon a minor tributary of the mainline.  
+Point to Point navigation via Classic logic has always been a bit of an odd duck.  The NHDPlus desktop navigators have never provided this capability and I have no recollection of where this requirement came from.  Classic point to point logic essentially executes a downstream mainline navigation which halts at the hydrosequence value of the stop flowline.  This may lead to some odd appearing results when the requested stop flowline occurs upon a minor tributary of the mainline.  
 
 * Test if navigation occurs entirely within a single flowline due to limiter values.  Process such "shorty" navigation via a simple SQL statement clipping the single flowline as needed.
 
