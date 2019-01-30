@@ -8,7 +8,7 @@ I don't know the design considerations for classic navigation logic but one cons
 
 Secondly the overall approach is what I often term a "gulp, mark and extract" logic whereby a very large superset of the data is marshalled in a temporary table and then logic committed against that recordset.  It can make the code hard to follow as recordset selectors are adjusted before a final extraction.  If my explanations are lacking please enter an issue to prod me to better explain things.
 
-Navigation in classic logic recurses level paths in the dataset.  While this provides a performance boost in many instances where level paths comprise thousands of flowlines, the shortcut is devalued by the need to check individual flowlines against limiters and recalculate the path time and length.  Overall it makes for a complicated logic.  The NLDI rewrite declined to follow this logic and I concur as my general feeling is with modern databases this boost is wash at best.  However it is worth emphasizing that fundmentally classic navigation is different from NLDI and WATERS v3.0 navigation in it's usage of level paths.
+Navigation in classic logic recurses level paths as it travels for network.  The NLDI rewrite declined to follow this logic instead walking flowline by flowline.  After consideration I concur that the most straightforward logic is to avoid the level path approach.  Thus it is worth emphasizing that fundamentally classic navigation is different from NLDI and WATERS v3.0 navigation in it's usage of level paths.
 
 #### Upstream Mainline
 
@@ -16,13 +16,11 @@ Navigation in classic logic recurses level paths in the dataset.  While this pro
 
 * Load temporary table with all PlusFlowlineVAA records having a hydrosequence value greater than the start flowline from the VPU matching the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
 
-* Mark flowlines having the same level path id and terminal path id as the start flowline and a hydrosequence greater than the start flowline.  Limit as appropriate by distance or flowline.  Note the largest hydrosequence and it's level path id values from the set.
+* Mark flowlines having the same level path id and terminal path id as the start flowline and a hydrosequence greater than the start flowline.  Limit as appropriate by distance or flowline.  Note the largest upstream hydrosequence and it's level path id value from the set.
 
-* Using the level path id of the largest hydrosequence, iterate again marking flowlines having the same level path as the previous largest hydrosequence and the same terminal path id as the start flowline.  Limit again as appropriate by distance or flowline.  Again note the largest hydrosequence and it's level path id values from the set.
+* Iterate as many times as needed marking each new upstream level path until headwater, limiter, or VPU connection is met.
 
-* If headwater, limiter, or VPU connection is met, cease iteration.  Otherwise continue moving upwards by level path id.
-
-* Check if navigation reached a VPU connection, if so then continue navigating up the precached VPU extensions.  Add results into the final output.
+* If navigation reached a VPU connection, then continue navigating up the precached VPU extensions.  Add results into the final output.
 
 * Trim initial start flowline fmeasure value as needed accounting for the start measure. 
 
