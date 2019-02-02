@@ -13,7 +13,6 @@ Note that not all navigation logics discussed here satisfy all these suggested r
 
 #### Functionality Matrix
 
-| ------------- | -------- |------------------|------------|----------------------|
 | Logic         | Measures | Network Distance | Attributes | PlusFlow Connections |
 | ------------- | -------- |------------------|------------|----------------------|
 | Classic Nav   | Yes      | Yes              | Yes        | Yes                  |
