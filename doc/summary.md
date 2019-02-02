@@ -13,8 +13,13 @@ Note that not all navigation logics discussed here satisfy all these suggested r
 
 #### Functionality Matrix
 
+| ------------- | -------- |------------------|------------|----------------------|
 | Logic         | Measures | Network Distance | Attributes | PlusFlow Connections |
 | ------------- | -------- |------------------|------------|----------------------|
 | Classic Nav   | Yes      | Yes              | Yes        | Yes                  |
 | WATERS v3.0   | Yes      | Yes              | Yes        | Yes                  |
 | NLDI Nav      | No       | No               | No         | No                   |
+
+#### Topics for further research
+
+1) The utility of the MegaDiv table in navigation is perhaps worth discussion.  It would seem that the PlusFlow table provides all the information in the MegaDiv table with the addition of extremely useful hydro sequence and level path id values.  My general feeling is to skip the MegaDiv table and just fetch needed information from the PlusFlow table.  
