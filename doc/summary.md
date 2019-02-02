@@ -6,7 +6,15 @@ Note that not all navigation logics discussed here satisfy all these suggested r
 
 1) Be fast.
 2) Be able to navigate the entire Mississippi watershed in a manner reasonable to most users.
-3) Fully support reach measures and navigation to and from partial flowlines.
-4) Return reasonable path length (and time) values for downstream with divergences navigation.
+3) Utilize the PlusFlow reference table to navigate all connections regardless of drain count.
+4) Fully support reach measures and navigation to and from partial flowlines.
+5) Return reasonable and repeatable network (path) length and flow time values derived from main stem priorities.  Includes logic downstream with divergences navigation.
+6) Return essential flowline attributes (perhaps optionally), in particular GNIS Name values for mapping purposes.
 
-#### 
+#### Functionality Matrix
+
+| Logic         | Measures | Network Distance | Attributes | PlusFlow Connections |
+| ------------- | -------- |------------------|------------|----------------------|
+| Classic Nav   | Yes      | Yes              | Yes        | Yes                  |
+| WATERS v3.0   | Yes      | Yes              | Yes        | Yes                  |
+| NLDI Nav      | No       | No               | No         | No                   |
