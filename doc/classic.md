@@ -54,6 +54,18 @@ Navigation in classic logic recurses level paths as it travels for network.  The
 
 #### Downstream with Divergences
 
+Downstream with divergences navigation is different and more complex than other flavors of navigation in that precalculated network distance calculations via NHDPlus path length and path time are not useful when recursing down divergences.  Rather the network distance values needs to be rebuilt as needed for the given divergence in the context of the upstream flow.  This then leads to the need for a simple logic to guide these decisions.  I beleive this logic could be expressed as:
+
+1) Main path rules the navigation and determines the ultimate distance navigated and network distances for flowlines in the main path.  In other words no matter the size or shorter route of any divergences they will never move beyond the extent of the mainline navigation.  So just as with upstream with tributary navigation, when a "short cut" appears the divergence navigation will pause at the reconnect until the mainpath catches up.  
+
+2) Divergences off the mainline are processed in descending hydrosequence order.
+
+3) Each divergence creates it own navigation along it's own mainline running down until it hits a distance limiter or hits the original mainline or a previously processed divergence.  The divergence's network distance is altered to reflect the source location on the mainline.  This altered distance is then reflected down the divergence mainline.
+
+4) After all divergences are processed off the original mainline, then collect a new set of additional divergences from step #3 and repeat until all divergences are processed.
+
+Now is the classic navigation, particularly on the desktop, actually using this logic precisely?  That is a good question for additional research.  There is an arbitrary nature to choosing one divergence over another when we are four or five divergence-within-divergence levels deep into a navigation.  My general thought is to just have a repeatable logic so that different navigators return similar network distance and flow time results.
+
 * Test if navigation occurs entirely within a single flowline due to limiter values.  Process such "shorty" navigation via a simple SQL statement clipping the single flowline as needed.
 
 * Load temporary table with all flowlines in VPU having a hydro sequence value less than or equal to the start flowline from the VPU matching the start flowline.  Limit where appropriate by distance or flowtime.  Exclude coastal flowlines or flowlines having a length of -9999.
