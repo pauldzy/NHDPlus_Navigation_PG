@@ -68,6 +68,8 @@ So the logic overall is the same as the classic downstream with divergences logi
 
 * Repeat as needed until all divergences are processed.
 
+Note when doing head-to-head comparisons between Classic and WATERS v3.0 Downstream with Divergences navigation one will find very small variances in the network distance values when the navigation has many divergences within divergences.  This occurs due to the lengthkm value having a lot of precision and the pathlength value only have three places of precision.  WATERS v3.0 builds a new pathlength for the divergence from the top adding together length values of the divergence.  Classic navigation generates an offset which is applied to the existing pathlengths of the divergence.  Its just a precision variance in the way the two methods work.  Ideally one could recalculate the pathlength and pathtime values with higher precision and these differences would then go away.
+
 #### Point to Point
 
 [code reference](https://github.com/pauldzy/NHDPlus_Navigation_PG/blob/315e42880e658b61e140b54d221fd86b9f47b786/src/nhdplus_navigation30/Functions/NAV_PP.sql#L1)
