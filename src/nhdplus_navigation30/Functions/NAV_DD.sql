@@ -263,7 +263,8 @@ BEGIN
          ,a.nav_order
          ,a.selected
          FROM
-         dm a; 
+         dm a
+         ON CONFLICT DO NOTHING;         
          
          GET DIAGNOSTICS int_collect = ROW_COUNT;
          int_count := int_count + int_collect;
