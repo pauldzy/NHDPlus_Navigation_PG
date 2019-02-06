@@ -42,7 +42,8 @@ While outside the scope of this project there are some other navigators out ther
 2. [Classic Navigation logic](doc/classic.md)
 3. [NLDI Navigation logic](doc/nldi.md)
 4. [WATERS Navigation v3.0 logic](doc/navigation30.md)
-5. [Difference Summary](doc/summary.md)
+5. [Test Cases](doc/tests.md)
+6. [Difference Summary](doc/summary.md)
 
 ## Notes
 
