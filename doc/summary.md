@@ -13,11 +13,11 @@ Note that not all navigation logics discussed here satisfy all these suggested r
 
 #### Functionality Matrix
 
-| Logic         | Measures | Network Distance | Attributes | PlusFlow Connections |
-| ------------- | -------- |------------------|------------|----------------------|
-| Classic Nav   | Yes      | Yes              | Yes        | Yes                  |
-| WATERS v3.0   | Yes      | Yes              | Yes        | Yes                  |
-| NLDI Nav      | No       | No               | No         | No                   |
+| Logic         | Measures | Distance<br/>Limiter | Flowtime<br/>Limiter | Report<br/>Distance | Report<br/>Attributes | Use PlusFlow<br/>Connections |
+| ------------- | -------- |----------|----------|----------|------------|--------------|
+| Classic Nav   | Yes      | Yes      | No       | Yes      | Yes        | Yes          |
+| WATERS v3.0   | Yes      | Yes      | No       | Yes      | Yes        | Yes          |
+| NLDI Nav      | No       | Yes      | No       | No       | No         | No           |
 
 #### Topics for further research
 
