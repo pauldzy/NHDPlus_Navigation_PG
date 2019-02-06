@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION nhdplus_navigation30.nav_pp(
 VOLATILE
 AS $BODY$
 DECLARE
-   
+   rec         RECORD;
    int_count   INTEGER;
    int_check   INTEGER;
    
@@ -13,9 +13,48 @@ BEGIN
 
    ----------------------------------------------------------------------------
    -- Step 10
-   -- Return total count of results
+   -- Create tmp_network_working30 temp table
    ----------------------------------------------------------------------------
-   WITH RECURSIVE pp(
+   IF nhdplus_navigation30.temp_table_exists('tmp_network_working30')
+   THEN
+      TRUNCATE TABLE tmp_network_working30;
+      
+   ELSE
+      CREATE TEMPORARY TABLE tmp_network_working30(
+          comid                       INT4
+         ,hydrosequence               INT4
+         ,dnhydroseq                  INTEGER
+         ,terminalpathid              INTEGER
+         ,fmeasure                    NUMERIC
+         ,tmeasure                    NUMERIC
+         ,lengthkm                    NUMERIC
+         ,flowtimeday                 NUMERIC
+         ,network_distancekm          NUMERIC
+         ,network_flowtimeday         NUMERIC
+         ,fromnode                    INT4
+         ,tonode                      INT4
+         ,cost                        FLOAT8
+      );
+
+      CREATE INDEX tmp_network_working30_01i
+      ON tmp_network_working30(comid);
+      
+      CREATE INDEX tmp_network_working30_02i
+      ON tmp_network_working30(hydrosequence);
+      
+      CREATE INDEX tmp_network_working30_03i
+      ON tmp_network_working30(fromnode);
+      
+      CREATE INDEX tmp_network_working30_04i
+      ON tmp_network_working30(tonode);
+
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Run downstream mainline as most probable solution
+   ----------------------------------------------------------------------------
+   WITH RECURSIVE dm(
        comid
       ,hydroseq
       ,dnhydroseq
@@ -28,7 +67,9 @@ BEGIN
       ,network_flowtimeday
       ,base_pathlength
       ,base_pathtime
-      ,nav_order
+      ,fromnode
+      ,tonode
+      ,cost
    )
    AS (
       SELECT
@@ -44,7 +85,9 @@ BEGIN
       ,obj_start_flowline.out_flowtimeday
       ,obj_start_flowline.pathlengthkm    + obj_start_flowline.out_lengthkm
       ,obj_start_flowline.pathflowtimeday + obj_start_flowline.out_flowtimeday
-      ,0 AS nav_order
+      ,obj_start_flowline.fromnode
+      ,obj_start_flowline.tonode
+      ,1::FLOAT8
       UNION
       SELECT
        mq.comid
@@ -55,46 +98,54 @@ BEGIN
       ,mq.tmeasure
       ,mq.lengthkm  -- segment lengthkm
       ,mq.travtime
-      ,pp.base_pathlength - mq.pathlength
-      ,pp.base_pathtime   - mq.pathtime   
-      ,pp.base_pathlength -- base pathlength
-      ,pp.base_pathtime
-      ,pp.nav_order + 1 
+      ,dm.base_pathlength - mq.pathlength
+      ,dm.base_pathtime   - mq.pathtime   
+      ,dm.base_pathlength -- base pathlength
+      ,dm.base_pathtime
+      ,mq.fromnode
+      ,mq.tonode
+      ,1::FLOAT8
       FROM
       nhdplus_navigation30.plusflowlinevaa_nav mq
       CROSS JOIN
-      pp
+      dm
       WHERE
-          mq.hydroseq       =  pp.dnhydroseq
-      AND mq.terminalpathid =  pp.terminalpathid
+          mq.hydroseq       =  dm.dnhydroseq
+      AND mq.terminalpathid =  dm.terminalpathid
       AND mq.hydroseq       >= obj_stop_flowline.hydrosequence
    )
-   INSERT INTO tmp_navigation_working30(
+   INSERT INTO tmp_network_working30(
        comid
       ,hydrosequence
+      ,dnhydroseq 
+      ,terminalpathid
       ,fmeasure
       ,tmeasure
       ,lengthkm
       ,flowtimeday
       ,network_distancekm
       ,network_flowtimeday
-      ,nav_order
-      ,selected
+      ,fromnode
+      ,tonode
+      ,cost
    )
    SELECT
     a.comid
    ,a.hydroseq
+   ,a.dnhydroseq
+   ,a.terminalpathid
    ,a.fmeasure
    ,a.tmeasure
    ,a.lengthkm
    ,a.flowtimeday
    ,a.network_distancekm
    ,a.network_flowtimeday
-   ,a.nav_order
-   ,TRUE
+   ,a.fromnode
+   ,a.tonode
+   ,a.cost
    FROM
-   pp a;
-   
+   dm a;
+
    SELECT
    COUNT(*)
    INTO int_count
@@ -103,79 +154,13 @@ BEGIN
    WHERE
    a.comid = obj_stop_flowline.comid;
    
-   -------------------------------------------------------------------------
-   -- Next try divergences search as less likely
-   -------------------------------------------------------------------------
-   IF int_count = 0
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- If found then dump into working30 and exit
+   ----------------------------------------------------------------------------
+   IF int_count > 0
    THEN
-      int_check := nhdplus_navigation30.create_tmp_network();
-      
-      WITH RECURSIVE ppdd(
-          comid
-         ,hydroseq
-         ,dnhydroseq
-         ,dnminorhyd
-         ,fmeasure
-         ,tmeasure
-         ,lengthkm
-         ,flowtimeday
-         ,network_distancekm
-         ,network_flowtimeday
-         ,base_pathlength
-         ,base_pathtime
-         ,fromnode
-         ,tonode
-         ,cost
-      )
-      AS (
-         SELECT
-          obj_start_flowline.comid
-         ,obj_start_flowline.hydrosequence
-         ,obj_start_flowline.downhydrosequence
-         ,obj_start_flowline.dnminorhydrosequence
-         ,obj_start_flowline.fmeasure
-         ,obj_start_flowline.out_measure
-         ,obj_start_flowline.out_lengthkm
-         ,obj_start_flowline.out_flowtimeday
-         ,obj_start_flowline.out_lengthkm
-         ,obj_start_flowline.out_flowtimeday
-         ,obj_start_flowline.pathlengthkm    + obj_start_flowline.out_lengthkm
-         ,obj_start_flowline.pathflowtimeday + obj_start_flowline.out_flowtimeday
-         ,obj_start_flowline.fromnode
-         ,obj_start_flowline.tonode
-         ,1::FLOAT8 AS cost
-         UNION
-         SELECT
-          mq.comid
-         ,mq.hydroseq
-         ,mq.dnhydroseq
-         ,mq.dnminorhyd
-         ,mq.fmeasure
-         ,mq.tmeasure
-         ,mq.lengthkm  -- segment lengthkm
-         ,mq.travtime
-         ,ppdd.base_pathlength - mq.pathlength
-         ,ppdd.base_pathtime   - mq.pathtime   
-         ,ppdd.base_pathlength -- base pathlength
-         ,ppdd.base_pathtime
-         ,mq.fromnode
-         ,mq.tonode
-         ,CASE 
-          WHEN mq.hydroseq = ppdd.dnhydroseq
-          THEN
-            1::FLOAT8
-          ELSE
-            100::FLOAT8
-          END AS cost               
-         FROM
-         nhdplus_navigation30.plusflowlinevaa_nav mq
-         CROSS JOIN
-         ppdd
-         WHERE
-             mq.ary_upstream_hydroseq @> ARRAY[ppdd.hydroseq] 
-         AND mq.hydroseq >= obj_stop_flowline.hydrosequence
-      )
-      INSERT INTO tmp_network_working30(
+      INSERT INTO tmp_navigation_working30(
           comid
          ,hydrosequence
          ,fmeasure
@@ -184,24 +169,179 @@ BEGIN
          ,flowtimeday
          ,network_distancekm
          ,network_flowtimeday
-         ,fromnode
-         ,tonode
-         ,cost
+         ,selected
       )
       SELECT
-       a.comid
-      ,a.hydroseq
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.lengthkm
-      ,a.flowtimeday
-      ,a.network_distancekm
-      ,a.network_flowtimeday
-      ,a.fromnode
-      ,a.tonode
-      ,a.cost
+       b.comid
+      ,b.hydrosequence
+      ,b.fmeasure
+      ,b.tmeasure
+      ,b.lengthkm
+      ,b.flowtimeday
+      ,b.network_distancekm
+      ,b.network_flowtimeday
+      ,TRUE
       FROM
-      ppdd a;
+      tmp_network_working30 b;
+      
+      UPDATE tmp_navigation_working30 a
+      SET
+       fmeasure            = obj_stop_flowline.out_measure
+      ,tmeasure            = obj_stop_flowline.tmeasure
+      ,lengthkm            = obj_stop_flowline.out_lengthkm
+      ,flowtimeday         = obj_stop_flowline.out_flowtimeday
+      ,network_distancekm  = a.network_distancekm  + obj_stop_flowline.out_lengthkm    - a.lengthkm
+      ,network_flowtimeday = a.network_flowtimeday + obj_stop_flowline.out_flowtimeday - a.flowtimeday
+      WHERE
+      a.comid = obj_stop_flowline.comid;
+      
+   -------------------------------------------------------------------------
+   -- Step 40
+   -- Otherwise run divergences downstream
+   -------------------------------------------------------------------------
+   ELSE
+   
+      LOOP
+         FOR rec IN 
+            SELECT 
+             a.comid
+            ,a.hydroseq   AS hydrosequence
+            ,a.dnhydroseq AS downhydrosequence
+            ,a.terminalpathid 
+            ,a.fmeasure
+            ,a.tmeasure
+            ,a.lengthkm
+            ,a.travtime AS flowtimeday
+            ,b.network_distancekm  AS base_pathlength
+            ,b.network_flowtimeday AS base_pathtime
+            ,a.fromnode
+            ,a.tonode
+            FROM 
+            nhdplus_navigation30.plusflowlinevaa_nav a
+            JOIN 
+            tmp_network_working30 b
+            ON
+                a.ary_upstream_hydroseq @> ARRAY[b.hydrosequence]
+            AND a.hydroseq <> b.dnhydroseq
+            WHERE
+            NOT EXISTS (
+               SELECT
+               1
+               FROM
+               tmp_network_working30 cc
+               WHERE
+               cc.hydrosequence = a.hydroseq
+            )
+            ORDER BY
+            a.hydroseq DESC
+         LOOP
+         
+            WITH RECURSIVE dm(
+                comid
+               ,hydroseq
+               ,dnhydroseq
+               ,terminalpathid
+               ,fmeasure
+               ,tmeasure
+               ,lengthkm
+               ,flowtimeday
+               ,network_distancekm
+               ,network_flowtimeday
+               ,base_pathlength
+               ,base_pathtime
+               ,fromnode
+               ,tonode
+               ,cost
+            )
+            AS (
+               SELECT
+                rec.comid
+               ,rec.hydrosequence
+               ,rec.downhydrosequence
+               ,rec.terminalpathid
+               ,rec.fmeasure
+               ,rec.tmeasure
+               ,rec.lengthkm
+               ,rec.flowtimeday
+               ,rec.base_pathlength  + rec.lengthkm
+               ,rec.base_pathtime    + rec.flowtimeday
+               ,rec.base_pathlength 
+               ,rec.base_pathtime
+               ,rec.fromnode
+               ,rec.tonode
+               ,100::FLOAT8 AS cost
+               UNION
+               SELECT
+                mq.comid
+               ,mq.hydroseq
+               ,mq.dnhydroseq
+               ,mq.terminalpathid
+               ,mq.fmeasure
+               ,mq.tmeasure
+               ,mq.lengthkm
+               ,mq.travtime
+               ,dm.network_distancekm  + mq.lengthkm
+               ,dm.network_flowtimeday + mq.travtime
+               ,dm.base_pathlength
+               ,dm.base_pathtime
+               ,mq.fromnode
+               ,mq.tonode
+               ,100::FLOAT8 AS cost
+               FROM
+               nhdplus_navigation30.plusflowlinevaa_nav mq
+               CROSS JOIN
+               dm
+               WHERE
+                   mq.hydroseq       = dm.dnhydroseq
+               AND mq.terminalpathid = dm.terminalpathid
+               AND mq.hydroseq       >= obj_stop_flowline.hydrosequence
+               AND NOT EXISTS (
+                  SELECT
+                  1
+                  FROM
+                  tmp_network_working30 cc
+                  WHERE
+                  cc.hydrosequence = mq.hydroseq
+               )
+            )
+            INSERT INTO tmp_network_working30(
+                comid
+               ,hydrosequence
+               ,dnhydroseq 
+               ,terminalpathid
+               ,fmeasure
+               ,tmeasure
+               ,lengthkm
+               ,flowtimeday
+               ,network_distancekm
+               ,network_flowtimeday
+               ,fromnode
+               ,tonode
+               ,cost
+            )
+            SELECT
+             a.comid
+            ,a.hydroseq
+            ,a.dnhydroseq
+            ,a.terminalpathid
+            ,a.fmeasure
+            ,a.tmeasure
+            ,a.lengthkm
+            ,a.flowtimeday
+            ,a.network_distancekm
+            ,a.network_flowtimeday
+            ,a.fromnode
+            ,a.tonode
+            ,a.cost
+            FROM
+            dm a
+            ON CONFLICT DO NOTHING;         
+
+         END LOOP;
+      
+         EXIT WHEN NOT FOUND;
+      
+      END LOOP;
       
       SELECT
       COUNT(*)
@@ -210,8 +350,6 @@ BEGIN
       tmp_network_working30 a
       WHERE
       a.comid = obj_stop_flowline.comid;
-      
-      TRUNCATE TABLE tmp_navigation_working30;
 
       IF int_count > 0
       THEN
@@ -323,18 +461,6 @@ BEGIN
          );
          
       END IF;
-   
-   ELSE
-      UPDATE tmp_navigation_working30 a
-      SET
-       fmeasure            = obj_stop_flowline.out_measure
-      ,tmeasure            = obj_stop_flowline.tmeasure
-      ,lengthkm            = obj_stop_flowline.out_lengthkm
-      ,flowtimeday         = obj_stop_flowline.out_flowtimeday
-      ,network_distancekm  = a.network_distancekm  + obj_stop_flowline.out_lengthkm    - a.lengthkm
-      ,network_flowtimeday = a.network_flowtimeday + obj_stop_flowline.out_flowtimeday - a.flowtimeday
-      WHERE
-      a.comid = obj_stop_flowline.comid;
    
    END IF;
    
