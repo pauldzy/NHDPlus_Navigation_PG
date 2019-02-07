@@ -27,7 +27,7 @@ Output: ComIDs 22338561, 22338431, 22338423, 22337455, 22337451, 22337449, 22337
 Input: ComID 22338811, Measure 65.49847, Upstream with Tributaries unbounded
 Output: ComIDs 22338811, 22338753, 22338775, 22338723, 22338727 ending with FMeasure 0 and TMeasure 100, Network Distance 8.1692 km
 
-![simpleUT](/doc/simpleUM.png)
+![simpleUT](/doc/simpleUT.png)
 
 #### Simple Downstream Mainline
 
