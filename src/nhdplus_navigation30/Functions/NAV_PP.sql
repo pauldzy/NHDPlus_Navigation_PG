@@ -150,7 +150,7 @@ BEGIN
    COUNT(*)
    INTO int_count
    FROM 
-   tmp_navigation_working30 a
+   tmp_network_working30 a
    WHERE
    a.comid = obj_stop_flowline.comid;
    
