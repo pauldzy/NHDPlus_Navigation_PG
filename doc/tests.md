@@ -10,6 +10,8 @@ Output: ComID 22340547, FMeasure 35.10735, TMeasure 35.10735, LengthKM 1 km, Net
 
 ![shortyDM](/doc/shortyDM.png)
 
+![shortyDM](/doc/shortyDM_Desktop.png)
+
 Input: ComID 22338859, Measure 73.1257, Point-to-Point to ComID 22338859, Measure 63.90042
 Output: ComID 22338859, FMeasure 63.90042, TMeasure 73.1257, LengthKM 0.3683 km, Network Distance 0.3683 km
 
