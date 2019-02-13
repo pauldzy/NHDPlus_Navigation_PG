@@ -63,4 +63,8 @@ In this test case there is a distance shortcut through Antietam creek of shorter
 
 ![shortcutUT](/doc/shortcutUT.png)
 
+![shortcutUT](/doc/shortcutUT_Desktop.png)
+
 #### Downstream with Divergences including Shortcut
+
+Input:
