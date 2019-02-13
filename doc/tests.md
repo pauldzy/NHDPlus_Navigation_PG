@@ -63,4 +63,16 @@ In this test case there is a distance shortcut through Antietam creek of shorter
 
 ![shortcutUT](/doc/shortcutUT.png)
 
+![shortcutUT](/doc/shortcutUT_Desktop.png)
+
 #### Downstream with Divergences including Shortcut
+
+Input: ComID 18124392, Measure 24.4619 downstream for 2.5 km
+Output Bottom of West Pascagoula River: ComID 18122576, FMeasure 27.71804, TMeasure 100.00, Network Distance 2.5 km
+Output Bottom of shortcut divergence: ComID 18122574, FMeasure 0, TMeasure 100.00, Network Distance 2.3093 km
+Output Bottom of other divergence: ComID 18122736, FMeasure 33.38157, TMeasure 100.00, Network Distance 2.5 km
+
+In this test case there is a distance shortcut through the nearby lake of shorter distance than following the main path of the West Pascagoula River.  NHDPlus navigation via path length requires that the shortcut "pause" at the outflow to the West Pascagoula until the main path "catches up".
+
+![shortcutDD](/doc/shortcutDD.png)
+
