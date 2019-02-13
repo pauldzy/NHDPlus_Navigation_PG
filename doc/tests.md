@@ -76,3 +76,7 @@ In this test case there is a distance shortcut through the nearby lake of shorte
 
 ![shortcutDD](/doc/shortcutDD.png)
 
+![shortcutDD_Desktop](/doc/shortcutDD_Desktop.png)
+
+I am not exactly sure why the desktop tool has that small gap at the top of the lake divergence.
+
