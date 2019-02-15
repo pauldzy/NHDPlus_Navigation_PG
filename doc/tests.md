@@ -98,7 +98,7 @@ I am not exactly sure why the desktop tool has that small gap at the top of the 
 
 Input: Start ComID 22341029, Measure 42.66844 to Stop ComID 22341031, Measure 36.90974.
 
-WATERS V3.0 Output: ComIDs 22341029, 22341027, 22338669 ending at FMeasure 36.90974 for Network Distance 3.2066 km
+WATERS V3.0 Output: ComIDs 22341029, 22341027, 22338669, 22341031 ending at FMeasure 36.90974 for Network Distance 3.2066 km
 
 ![divergencePP_v3](/doc/divergencePP_v3.png)
 
