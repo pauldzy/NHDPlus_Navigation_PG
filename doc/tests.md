@@ -94,5 +94,22 @@ In this test case there is a distance shortcut through the nearby lake of shorte
 
 I am not exactly sure why the desktop tool has that small gap at the top of the lake divergence.
 
-#### 
+#### Point to Point ending at Divergence
 
+Input: Start ComID 22341029, Measure 42.66844 to Stop ComID 22341031, Measure 36.90974.
+
+WATERS V3.0 Output: ComIDs 22341029, 22341027, 22338669 ending at FMeasure 36.90974 for Network Distance 3.2066 km
+
+![divergencePP_v3](/doc/divergencePP_v3.png)
+
+Classic Output: ComIDs 22341029, 22340549, 22340553, 22340561 ending at FMeasure 0.00 for Network Distance 4.4970 km
+
+![divergencePP_cl](/doc/divergencePP_cl.png)
+
+As discussed in the text, Classic navigation logic only finds hydro-sequence-based solutions along the downstream main path.  WATERS v3.0 navigation adds additional routing logic to find a connection to the actual stop location.
+
+Here is a more complex example from ComID 933180286, Measure 17.71519 to ComID 15713777, Measure 54.86753
+
+![divergencePP_v32](/doc/divergencePP_v32.png)
+
+![divergencePP_cl2](/doc/divergencePP_cl2.png)
