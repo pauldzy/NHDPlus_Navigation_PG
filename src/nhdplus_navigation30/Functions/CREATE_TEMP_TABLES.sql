@@ -26,6 +26,7 @@ BEGIN
          ,network_distancekm          NUMERIC
          ,network_flowtimeday         NUMERIC
          ,downhydrosequence           INTEGER
+         ,navtermination_flag         INTEGER
          ,nav_order                   INTEGER
          ,selected                    BOOLEAN
       );
@@ -46,6 +47,9 @@ BEGIN
       ON tmp_navigation_working30(downhydrosequence);
       
       CREATE INDEX tmp_navigation_working30_04i
+      ON tmp_navigation_working30(nav_order);
+      
+      CREATE INDEX tmp_navigation_working30_05i
       ON tmp_navigation_working30(selected);
       
    END IF;

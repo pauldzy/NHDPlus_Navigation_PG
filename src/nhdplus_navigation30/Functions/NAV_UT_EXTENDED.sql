@@ -20,7 +20,7 @@ BEGIN
    
    ----------------------------------------------------------------------------
    -- Step 10
-   -- Return total count of results
+   -- First run upstream mainline
    ----------------------------------------------------------------------------
    WITH RECURSIVE um(
        comid
@@ -64,9 +64,9 @@ BEGIN
       ,mq.fmeasure
       ,mq.tmeasure
       ,mq.lengthkm  -- segment lengthkm
-      ,mq.travtime
+      ,mq.totma
       ,mq.pathlength - um.base_pathlength + mq.lengthkm
-      ,mq.pathtime   - um.base_pathtime   + mq.travtime
+      ,mq.pathtimema - um.base_pathtime   + mq.totma
       ,um.base_pathlength -- base pathlength
       ,um.base_pathtime
       ,um.nav_order + 1000              
@@ -95,7 +95,7 @@ BEGIN
       )
       AND (
             num_maximum_flowtime_day IS NULL
-         OR mq.pathtime   - um.base_pathtime   <= num_maximum_flowtime_day
+         OR mq.pathtimema - um.base_pathtime   <= num_maximum_flowtime_day
       )
    )
    INSERT INTO tmp_navigation_working30(
@@ -127,9 +127,24 @@ BEGIN
    
    GET DIAGNOSTICS int_count = ROW_COUNT;
    
-   -------------------------------------------------------------------
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Tag the upstream mainline nav termination flags
+   ----------------------------------------------------------------------------
+   UPDATE tmp_navigation_working30 a
+   SET navtermination_flag = CASE
+   WHEN a.nav_order = (SELECT MAX(b.nav_order) FROM tmp_navigation_working30 b LIMIT 1)
+   THEN
+      1
+   ELSE
+      0
+   END
+   WHERE selected = TRUE;
+   
+   ----------------------------------------------------------------------------
+   -- Step 30
    -- Extract the divs off the mainline
-   -------------------------------------------------------------------
+   ----------------------------------------------------------------------------
    FOR r IN 
       SELECT 
        a.comid
@@ -138,9 +153,9 @@ BEGIN
       ,a.fmeasure
       ,a.tmeasure
       ,a.lengthkm
-      ,a.travtime
+      ,a.totma
       ,b.network_distancekm  + a.lengthkm AS network_distancekm
-      ,b.network_flowtimeday + a.travtime AS network_flowtimeday 
+      ,b.network_flowtimeday + a.totma    AS network_flowtimeday 
       ,b.nav_order
       FROM 
       nhdplus_navigation30.plusflowlinevaa_nav a
@@ -177,7 +192,7 @@ BEGIN
             ,r.fmeasure
             ,r.tmeasure
             ,r.lengthkm
-            ,r.travtime
+            ,r.totma
             ,r.network_distancekm
             ,r.network_flowtimeday
             ,r.nav_order
@@ -206,9 +221,9 @@ BEGIN
             ,r.fmeasure
             ,r.tmeasure
             ,r.lengthkm
-            ,r.travtime
+            ,r.totma
             ,r.lengthkm
-            ,r.travtime
+            ,r.totma
             ,num_init_baselengthkm 
             ,num_init_baseflowtimeday
             ,r.nav_order
@@ -220,9 +235,9 @@ BEGIN
             ,mq.fmeasure
             ,mq.tmeasure
             ,mq.lengthkm
-            ,mq.travtime
+            ,mq.totma
             ,mq.pathlength - ut.base_pathlength + mq.lengthkm
-            ,mq.pathtime   - ut.base_pathtime   + mq.travtime
+            ,mq.pathtimema - ut.base_pathtime   + mq.totma
             ,ut.base_pathlength
             ,ut.base_pathtime
             ,ut.nav_order + 1 
@@ -238,7 +253,7 @@ BEGIN
             )
             AND (
                   num_maximum_flowtime_day IS NULL
-               OR mq.pathtime   - ut.base_pathtime   <= num_maximum_flowtime_day
+               OR mq.pathtimema - ut.base_pathtime   <= num_maximum_flowtime_day
             )
             AND NOT EXISTS (
                SELECT
@@ -302,7 +317,44 @@ BEGIN
    END LOOP;
    
    ----------------------------------------------------------------------------
-   -- Step 20
+   -- Step 40
+   -- Tag the upstream mainline nav termination flags
+   ----------------------------------------------------------------------------
+   WITH cte AS ( 
+      SELECT
+       a.hydrosequence
+      ,b.ary_upstream_hydroseq
+      ,b.headwater
+      FROM
+      tmp_navigation_working30 a
+      JOIN
+      nhdplus_navigation30.plusflowlinevaa_nav b
+      ON
+      a.hydrosequence = b.hydroseq
+      WHERE
+          a.selected = TRUE   
+      AND a.navtermination_flag IS NULL
+   )
+   UPDATE tmp_navigation_working30 a
+   SET navtermination_flag = CASE
+   WHEN EXISTS ( SELECT 1 FROM tmp_navigation_working30 d WHERE d.hydrosequence = ANY(cte.ary_upstream_hydroseq) )
+   THEN
+      0
+   ELSE
+      CASE
+      WHEN cte.headwater = 'Y'
+      THEN
+         4
+      ELSE
+         1
+      END
+   END
+   FROM cte
+   WHERE
+   a.hydrosequence = cte.hydrosequence;
+   
+   ----------------------------------------------------------------------------
+   -- Step 50
    -- Return total count of results
    ----------------------------------------------------------------------------
    RETURN int_count;

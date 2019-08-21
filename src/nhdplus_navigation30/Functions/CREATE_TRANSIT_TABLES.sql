@@ -49,6 +49,7 @@ BEGIN
       ,navigable                   VARCHAR(1)
       ,coastal                     VARCHAR(1)
       ,innetwork                   VARCHAR(1)
+      ,navtermination_flag         INTEGER
       ,shape                       GEOMETRY
       ,nav_order                   INTEGER
       ,CONSTRAINT tmp_navigation_results_pk 

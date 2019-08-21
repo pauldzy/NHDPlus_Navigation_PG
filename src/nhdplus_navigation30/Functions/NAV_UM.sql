@@ -57,9 +57,9 @@ BEGIN
       ,mq.fmeasure
       ,mq.tmeasure
       ,mq.lengthkm  -- segment lengthkm
-      ,mq.travtime
+      ,mq.totma
       ,mq.pathlength - um.base_pathlength + mq.lengthkm
-      ,mq.pathtime   - um.base_pathtime   + mq.travtime
+      ,mq.pathtimema - um.base_pathtime   + mq.totma
       ,um.base_pathlength -- base pathlength
       ,um.base_pathtime
       ,um.nav_order + 1 
@@ -84,7 +84,7 @@ BEGIN
       )
       AND (
             num_maximum_flowtime_day IS NULL
-         OR mq.pathtime   - um.base_pathtime   <= num_maximum_flowtime_day
+         OR mq.pathtimema - um.base_pathtime   <= num_maximum_flowtime_day
       )
    )
    INSERT INTO tmp_navigation_working30(
@@ -117,6 +117,42 @@ BEGIN
    
    ----------------------------------------------------------------------------
    -- Step 20
+   -- Tag the nav termination flags
+   ----------------------------------------------------------------------------
+   WITH cte AS ( 
+      SELECT
+       a.hydrosequence
+      ,b.headwater
+      FROM
+      tmp_navigation_working30 a
+      JOIN
+      nhdplus_navigation30.plusflowlinevaa_nav b
+      ON
+      a.hydrosequence = b.hydroseq
+      WHERE
+          a.selected = TRUE   
+      AND a.navtermination_flag IS NULL
+   )
+   UPDATE tmp_navigation_working30 a
+   SET navtermination_flag = CASE
+   WHEN a.nav_order = (SELECT MAX(c.nav_order) FROM tmp_navigation_working30 c LIMIT 1)
+   THEN
+      CASE
+      WHEN cte.headwater = 'Y'
+      THEN
+         4
+      ELSE
+         1
+      END
+   ELSE
+      0    
+   END
+   FROM cte
+   WHERE
+   a.hydrosequence = cte.hydrosequence;
+   
+   ----------------------------------------------------------------------------
+   -- Step 30
    -- Return total count of results
    ----------------------------------------------------------------------------
    RETURN int_count;

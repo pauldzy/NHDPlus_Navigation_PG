@@ -14,6 +14,7 @@ DECLARE
    num_init_tmeasure        NUMERIC;
    num_init_lengthkm        NUMERIC;
    num_init_flowtimeday     NUMERIC;
+   int_navtermination_flag  INTEGER;
    
 BEGIN
 
@@ -37,7 +38,7 @@ BEGIN
          num_init_tmeasure := obj_start_flowline.out_measure;
 
       END IF;
-
+      
    ELSIF num_maximum_distance_km < obj_start_flowline.out_lengthkm
    THEN
       IF str_search_type IN ('UM','UT')
@@ -77,6 +78,19 @@ BEGIN
    
    ----------------------------------------------------------------------------
    -- Step 20
+   -- Test just in case the results are exactly the same as original flowline
+   ----------------------------------------------------------------------------
+   IF obj_start_flowline.tmeasure - obj_start_flowline.fmeasure = num_init_tmeasure - num_init_fmeasure
+   THEN
+      int_navtermination_flag := 1;
+      
+   ELSE
+      int_navtermination_flag := 2;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 30
    -- Insert the results
    ----------------------------------------------------------------------------
    INSERT INTO tmp_navigation_working30(
@@ -88,6 +102,7 @@ BEGIN
       ,flowtimeday
       ,network_distancekm
       ,network_flowtimeday
+      ,navtermination_flag
       ,nav_order
       ,selected
    ) VALUES (
@@ -99,12 +114,13 @@ BEGIN
       ,num_init_flowtimeday
       ,num_init_lengthkm
       ,num_init_flowtimeday
+      ,int_navtermination_flag
       ,0
       ,TRUE
    );
 
    ----------------------------------------------------------------------------
-   -- Step 90
+   -- Step 40
    -- Insert the initial flowline and tag the running counts
    ----------------------------------------------------------------------------
    RETURN 1;

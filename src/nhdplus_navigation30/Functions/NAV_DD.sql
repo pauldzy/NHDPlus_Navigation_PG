@@ -62,9 +62,9 @@ BEGIN
       ,mq.fmeasure
       ,mq.tmeasure
       ,mq.lengthkm  -- segment lengthkm
-      ,mq.travtime
+      ,mq.totma
       ,dm.base_pathlength - mq.pathlength
-      ,dm.base_pathtime   - mq.pathtime
+      ,dm.base_pathtime   - mq.pathtimema
       ,dm.base_pathlength -- base pathlength
       ,dm.base_pathtime
       ,dm.nav_order + 10000
@@ -128,22 +128,58 @@ BEGIN
    
    ----------------------------------------------------------------------------
    -- Step 20
+   -- Tag the nav termination flags
+   ----------------------------------------------------------------------------
+   WITH cte AS ( 
+      SELECT
+       a.hydrosequence
+      ,b.coastal_connection
+      FROM
+      tmp_navigation_working30 a
+      JOIN
+      nhdplus_navigation30.plusflowlinevaa_nav b
+      ON
+      a.hydrosequence = b.hydroseq
+      WHERE
+          a.selected = TRUE   
+      AND a.navtermination_flag IS NULL
+   )
+   UPDATE tmp_navigation_working30 a
+   SET navtermination_flag = CASE
+   WHEN a.nav_order = (SELECT MAX(b.nav_order) FROM tmp_navigation_working30 b LIMIT 1)
+   THEN
+      CASE
+      WHEN cte.coastal_connection = 'Y'
+      THEN
+         3
+      ELSE
+         1
+      END
+   ELSE
+      0
+   END
+   FROM cte
+   WHERE
+   a.hydrosequence = cte.hydrosequence;
+   
+   ----------------------------------------------------------------------------
+   -- Step 30
    -- Extract the divergences off the mainline
    ----------------------------------------------------------------------------
    LOOP
       FOR rec IN 
          SELECT 
           a.comid
-         ,a.hydroseq   AS hydrosequence
-         ,a.dnhydroseq AS downhydrosequence
+         ,a.hydroseq            AS hydrosequence
+         ,a.dnhydroseq          AS downhydrosequence
          ,a.terminalpathid 
          ,a.fmeasure
          ,a.tmeasure
          ,a.lengthkm
-         ,a.travtime AS flowtimeday
+         ,a.totma               AS flowtimeday
          ,b.network_distancekm  AS base_pathlength
          ,b.network_flowtimeday AS base_pathtime
-         ,b.nav_order + 1 AS nav_order
+         ,b.nav_order + 1       AS nav_order
          FROM 
          nhdplus_navigation30.plusflowlinevaa_nav a
          JOIN 
@@ -206,9 +242,9 @@ BEGIN
             ,mq.fmeasure
             ,mq.tmeasure
             ,mq.lengthkm
-            ,mq.travtime
+            ,mq.totma
             ,dm.network_distancekm  + mq.lengthkm
-            ,dm.network_flowtimeday + mq.travtime
+            ,dm.network_flowtimeday + mq.totma
             ,dm.base_pathlength
             ,dm.base_pathtime
             ,dm.nav_order + 1
@@ -276,7 +312,44 @@ BEGIN
    END LOOP;
    
    ----------------------------------------------------------------------------
-   -- Step 30
+   -- Step 40
+   -- Tag the downstream nav termination flags
+   ----------------------------------------------------------------------------
+   WITH cte AS ( 
+      SELECT
+       a.hydrosequence
+      ,b.ary_downstream_hydroseq
+      ,b.coastal_connection
+      FROM
+      tmp_navigation_working30 a
+      JOIN
+      nhdplus_navigation30.plusflowlinevaa_nav b
+      ON
+      a.hydrosequence = b.hydroseq
+      WHERE
+          a.selected = TRUE   
+      AND a.navtermination_flag IS NULL
+   )
+   UPDATE tmp_navigation_working30 a
+   SET navtermination_flag = CASE
+   WHEN EXISTS ( SELECT 1 FROM tmp_navigation_working30 d WHERE d.hydrosequence = ANY(cte.ary_downstream_hydroseq) )
+   THEN
+      0
+   ELSE
+      CASE
+      WHEN cte.coastal_connection = 'Y'
+      THEN
+         3
+      ELSE
+         1
+      END
+   END
+   FROM cte
+   WHERE
+   a.hydrosequence = cte.hydrosequence;
+   
+   ----------------------------------------------------------------------------
+   -- Step 50
    -- Return total count of results
    ----------------------------------------------------------------------------
    RETURN int_count;

@@ -303,82 +303,12 @@ BEGIN
       );
 
    ELSE
+   
    ----------------------------------------------------------------------------
-   -- Step 100
-   -- Do upstream search with tributaries
+   -- Step 90
+   -- Do Point to Point
    ----------------------------------------------------------------------------
-      IF str_search_type = 'UT'
-      THEN 
-         IF (
-                num_maximum_distance_km  IS NULL
-            AND num_maximum_flowtime_day IS NULL
-            AND obj_start_flowline.arbolatesum > 500
-         ) OR (
-                num_maximum_distance_km  IS NOT NULL
-            AND num_maximum_distance_km > 200
-            AND obj_start_flowline.arbolatesum > 200
-         ) OR (
-                num_maximum_flowtime_day  IS NOT NULL
-            AND num_maximum_flowtime_day > 3
-            AND obj_start_flowline.arbolatesum > 200
-         )
-         THEN
-            int_counter := nhdplus_navigation30.nav_ut_extended(
-                obj_start_flowline       := obj_start_flowline
-               ,num_maximum_distance_km  := num_maximum_distance_km
-               ,num_maximum_flowtime_day := num_maximum_flowtime_day
-            );
-
-         ELSE   
-            int_counter := nhdplus_navigation30.nav_ut_concise(
-                obj_start_flowline       := obj_start_flowline
-               ,num_maximum_distance_km  := num_maximum_distance_km
-               ,num_maximum_flowtime_day := num_maximum_flowtime_day
-            );
-
-         END IF;
-              
-      ----------------------------------------------------------------------------
-      -- Step 110
-      -- Do upstream search main line
-      ----------------------------------------------------------------------------
-      ELSIF str_search_type = 'UM'
-      THEN
-         int_counter := nhdplus_navigation30.nav_um(
-             obj_start_flowline       := obj_start_flowline
-            ,num_maximum_distance_km  := num_maximum_distance_km
-            ,num_maximum_flowtime_day := num_maximum_flowtime_day
-         );
-
-      ----------------------------------------------------------------------------
-      -- Step 120
-      -- Do downstream search main line
-      ----------------------------------------------------------------------------
-      ELSIF str_search_type = 'DM'
-      THEN
-         int_counter := nhdplus_navigation30.nav_dm(
-             obj_start_flowline       := obj_start_flowline
-            ,num_maximum_distance_km  := num_maximum_distance_km
-            ,num_maximum_flowtime_day := num_maximum_flowtime_day
-         );
-
-      ----------------------------------------------------------------------------
-      -- Step 130
-      -- Do downstream with divergences 
-      -------------------------------------------------------------------
-      ELSIF str_search_type = 'DD'
-      THEN
-         int_counter := nhdplus_navigation30.nav_dd(
-             obj_start_flowline       := obj_start_flowline
-            ,num_maximum_distance_km  := num_maximum_distance_km
-            ,num_maximum_flowtime_day := num_maximum_flowtime_day
-         );
-
-      ----------------------------------------------------------------------------
-      -- Step 140
-      -- Do Point to Point
-      ----------------------------------------------------------------------------
-      ELSIF str_search_type = 'PP'
+      IF str_search_type = 'PP'
       THEN
          int_counter := nhdplus_navigation30.nav_pp(
              obj_start_flowline       := obj_start_flowline
@@ -386,88 +316,166 @@ BEGIN
          );
          
       ELSE
-         RAISE EXCEPTION 'err';
+   ----------------------------------------------------------------------------
+   -- Step 100
+   -- Do upstream search with tributaries
+   ----------------------------------------------------------------------------
+         IF str_search_type = 'UT'
+         THEN 
+            IF (
+                   num_maximum_distance_km  IS NULL
+               AND num_maximum_flowtime_day IS NULL
+               AND obj_start_flowline.arbolatesum > 500
+            ) OR (
+                   num_maximum_distance_km  IS NOT NULL
+               AND num_maximum_distance_km > 200
+               AND obj_start_flowline.arbolatesum > 200
+            ) OR (
+                   num_maximum_flowtime_day  IS NOT NULL
+               AND num_maximum_flowtime_day > 3
+               AND obj_start_flowline.arbolatesum > 200
+            )
+            THEN
+               int_counter := nhdplus_navigation30.nav_ut_extended(
+                   obj_start_flowline       := obj_start_flowline
+                  ,num_maximum_distance_km  := num_maximum_distance_km
+                  ,num_maximum_flowtime_day := num_maximum_flowtime_day
+               );
+
+            ELSE   
+               int_counter := nhdplus_navigation30.nav_ut_concise(
+                   obj_start_flowline       := obj_start_flowline
+                  ,num_maximum_distance_km  := num_maximum_distance_km
+                  ,num_maximum_flowtime_day := num_maximum_flowtime_day
+               );
+
+            END IF;
+                 
+   ----------------------------------------------------------------------------
+   -- Step 110
+   -- Do upstream search main line
+   ----------------------------------------------------------------------------
+         ELSIF str_search_type = 'UM'
+         THEN
+            int_counter := nhdplus_navigation30.nav_um(
+                obj_start_flowline       := obj_start_flowline
+               ,num_maximum_distance_km  := num_maximum_distance_km
+               ,num_maximum_flowtime_day := num_maximum_flowtime_day
+            );
+
+   ----------------------------------------------------------------------------
+   -- Step 120
+   -- Do downstream search main line
+   ----------------------------------------------------------------------------
+         ELSIF str_search_type = 'DM'
+         THEN
+            int_counter := nhdplus_navigation30.nav_dm(
+                obj_start_flowline       := obj_start_flowline
+               ,num_maximum_distance_km  := num_maximum_distance_km
+               ,num_maximum_flowtime_day := num_maximum_flowtime_day
+            );
+
+   ----------------------------------------------------------------------------
+   -- Step 130
+   -- Do downstream with divergences 
+   -------------------------------------------------------------------
+         ELSIF str_search_type = 'DD'
+         THEN
+            int_counter := nhdplus_navigation30.nav_dd(
+                obj_start_flowline       := obj_start_flowline
+               ,num_maximum_distance_km  := num_maximum_distance_km
+               ,num_maximum_flowtime_day := num_maximum_flowtime_day
+            );
+
+         ELSE
+            RAISE EXCEPTION 'err';
+            
+         END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 140
+   -- Trim endings and mark partial flowline termination flags
+   ----------------------------------------------------------------------------
+         IF num_maximum_distance_km IS NOT NULL
+         THEN
+            UPDATE tmp_navigation_working30 a
+            SET (
+                fmeasure
+               ,tmeasure
+               ,lengthkm
+               ,flowtimeday
+               ,network_distancekm
+               ,network_flowtimeday
+               ,navtermination_flag
+            ) = (
+               SELECT
+                aa.fmeasure
+               ,aa.tmeasure
+               ,aa.lengthkm
+               ,aa.flowtimeday
+               ,aa.network_distancekm
+               ,aa.network_flowtimeday
+               ,2
+               FROM
+               nhdplus_navigation30.trim_temp(
+                   p_search_type          := str_search_type
+                  ,p_fmeasure             := a.fmeasure
+                  ,p_tmeasure             := a.tmeasure
+                  ,p_lengthkm             := a.lengthkm
+                  ,p_flowtimeday          := a.flowtimeday
+                  ,p_network_distancekm   := a.network_distancekm
+                  ,p_network_flowtimeday  := a.network_flowtimeday
+                  ,p_maximum_distance_km  := num_maximum_distance_km
+                  ,p_maximum_flowtime_day := num_maximum_flowtime_day
+               ) aa
+            )
+            WHERE
+                a.selected IS TRUE
+            AND a.network_distancekm > num_maximum_distance_km;
+
+         ELSIF num_maximum_flowtime_day IS NOT NULL
+         THEN
+            UPDATE tmp_navigation_working30 a
+            SET (
+                fmeasure
+               ,tmeasure
+               ,lengthkm
+               ,flowtimeday
+               ,network_distancekm
+               ,network_flowtimeday
+               ,navtermination_flag
+            ) = (
+               SELECT
+                aa.fmeasure
+               ,aa.tmeasure
+               ,aa.lengthkm
+               ,aa.flowtimeday
+               ,aa.network_distancekm
+               ,aa.network_flowtimeday
+               ,2
+               FROM
+               nhdplus_navigation30.trim_temp(
+                   p_search_type          := str_search_type
+                  ,p_fmeasure             := a.fmeasure
+                  ,p_tmeasure             := a.tmeasure
+                  ,p_lengthkm             := a.lengthkm
+                  ,p_flowtimeday          := a.flowtimeday
+                  ,p_network_distancekm   := a.network_distancekm
+                  ,p_network_flowtimeday  := a.network_flowtimeday
+                  ,p_maximum_distance_km  := num_maximum_distance_km
+                  ,p_maximum_flowtime_day := num_maximum_flowtime_day
+               ) aa
+            )
+            WHERE
+                a.selected IS TRUE
+            AND a.network_flowtimeday > num_maximum_flowtime_day;
+
+         END IF;
+         
+      END IF;
       
-      END IF;
-
-   ----------------------------------------------------------------------------
-   -- Step 150
-   -- Trim endings
-   ----------------------------------------------------------------------------
-      IF num_maximum_distance_km IS NOT NULL
-      THEN
-         UPDATE tmp_navigation_working30 a
-         SET (
-             fmeasure
-            ,tmeasure
-            ,lengthkm
-            ,flowtimeday
-            ,network_distancekm
-            ,network_flowtimeday
-         ) = (
-            SELECT
-             aa.fmeasure
-            ,aa.tmeasure
-            ,aa.lengthkm
-            ,aa.flowtimeday
-            ,aa.network_distancekm
-            ,aa.network_flowtimeday
-            FROM
-            nhdplus_navigation30.trim_temp(
-                p_search_type          := str_search_type
-               ,p_fmeasure             := a.fmeasure
-               ,p_tmeasure             := a.tmeasure
-               ,p_lengthkm             := a.lengthkm
-               ,p_flowtimeday          := a.flowtimeday
-               ,p_network_distancekm   := a.network_distancekm
-               ,p_network_flowtimeday  := a.network_flowtimeday
-               ,p_maximum_distance_km  := num_maximum_distance_km
-               ,p_maximum_flowtime_day := num_maximum_flowtime_day
-            ) aa
-         )
-         WHERE
-             a.selected IS TRUE
-         AND a.network_distancekm > num_maximum_distance_km;
-
-      ELSIF num_maximum_flowtime_day IS NOT NULL
-      THEN
-         UPDATE tmp_navigation_working30 a
-         SET (
-             fmeasure
-            ,tmeasure
-            ,lengthkm
-            ,flowtimeday
-            ,network_distancekm
-            ,network_flowtimeday
-         ) = (
-            SELECT
-             aa.fmeasure
-            ,aa.tmeasure
-            ,aa.lengthkm
-            ,aa.flowtimeday
-            ,aa.network_distancekm
-            ,aa.network_flowtimeday
-            FROM
-            nhdplus_navigation30.trim_temp(
-                p_search_type          := str_search_type
-               ,p_fmeasure             := a.fmeasure
-               ,p_tmeasure             := a.tmeasure
-               ,p_lengthkm             := a.lengthkm
-               ,p_flowtimeday          := a.flowtimeday
-               ,p_network_distancekm   := a.network_distancekm
-               ,p_network_flowtimeday  := a.network_flowtimeday
-               ,p_maximum_distance_km  := num_maximum_distance_km
-               ,p_maximum_flowtime_day := num_maximum_flowtime_day
-            ) aa
-         )
-         WHERE
-             a.selected IS TRUE
-         AND a.network_flowtimeday > num_maximum_flowtime_day;
-
-      END IF;
-
    END IF;
-
+   
    ----------------------------------------------------------------------------
    -- Step 160
    -- Load the final table
@@ -504,6 +512,7 @@ BEGIN
       ,navigable
       ,coastal
       ,innetwork
+      ,navtermination_flag
       ,shape
       ,nav_order
    )
@@ -539,6 +548,7 @@ BEGIN
    ,a.navigable
    ,a.coastal
    ,a.innetwork
+   ,a.navtermination_flag
    ,a.shape
    ,a.nav_order
    FROM (
@@ -572,6 +582,7 @@ BEGIN
       ,aa.navigable
       ,aa.coastal
       ,aa.innetwork
+      ,aa.navtermination_flag
       ,aa.shape
       ,aa.nav_order
       FROM (
@@ -604,12 +615,13 @@ BEGIN
          ,bbb.gnis_id
          ,bbb.gnis_name
          ,bbb.wbarea_permanent_identifier
-         ,bbb.wbarea_nhdplus_comid AS wbarea_comid
+         ,bbb.wbarea_comid
          ,bbb.wbd_huc12
          ,bbb.catchment_featureid
          ,bbb.navigable
          ,bbb.coastal
          ,bbb.innetwork
+         ,aaa.navtermination_flag
          ,CASE
           WHEN aaa.fmeasure <> bbb.fmeasure
           OR   aaa.tmeasure <> bbb.fmeasure
@@ -627,7 +639,7 @@ BEGIN
          JOIN
          nhdplus.nhdflowline_np21 bbb
          ON
-         aaa.comid = bbb.nhdplus_comid
+         aaa.comid = bbb.comid
          WHERE
              aaa.selected IS TRUE
          AND aaa.fmeasure <> aaa.tmeasure

@@ -8,9 +8,9 @@ CREATE MATERIALIZED VIEW nhdplus_navigation30.plusflowlinevaa_nav(
    ,fmeasure
    ,tmeasure
    ,lengthkm
-   ,travtime
+   ,totma
    ,pathlength
-   ,pathtime
+   ,pathtimema
    ,uphydroseq
    ,dnhydroseq
    ,dnminorhyd
@@ -20,6 +20,8 @@ CREATE MATERIALIZED VIEW nhdplus_navigation30.plusflowlinevaa_nav(
    ,force_main_line
    ,ary_upstream_hydroseq
    ,ary_downstream_hydroseq
+   ,headwater
+   ,coastal_connection
 )
 TABLESPACE nhdplus_data
 AS
@@ -31,9 +33,9 @@ SELECT
 ,a.fmeasure
 ,a.tmeasure
 ,a.lengthkm
-,a.travtime
+,a.totma
 ,a.pathlength
-,a.pathtime
+,a.pathtimema
 ,CASE
  WHEN a.uphydroseq = 0
  THEN
@@ -180,6 +182,20 @@ SELECT
  ELSE
    NULL
  END AS ary_downstream_hydroseq
+,CASE
+ WHEN a.startflag = 1
+ THEN
+   CAST('Y' AS VARCHAR(1))
+ ELSE
+   CAST('N' AS VARCHAR(1))
+ END AS headwater
+,CASE
+ WHEN EXISTS (SELECT 1 FROM nhdplus.plusflow_np21 d WHERE d.fromhydroseq = a.hydroseq AND d.direction = 714 )
+ THEN
+   CAST('Y' AS VARCHAR(1))
+ ELSE
+   CAST('N' AS VARCHAR(1))
+ END AS coastal_connection
 FROM
 nhdplus.plusflowlinevaa_np21 a
 WHERE
@@ -223,7 +239,7 @@ ON nhdplus_navigation30.plusflowlinevaa_nav(pathlength)
 TABLESPACE nhdplus_data;
 
 CREATE INDEX plusflowlinevaa_nav_07i
-ON nhdplus_navigation30.plusflowlinevaa_nav(pathtime)
+ON nhdplus_navigation30.plusflowlinevaa_nav(pathtimema)
 TABLESPACE nhdplus_data;
 
 CREATE INDEX plusflowlinevaa_nav_08i
@@ -240,6 +256,14 @@ TABLESPACE nhdplus_data;
 
 CREATE INDEX plusflowlinevaa_nav_gn2
 ON nhdplus_navigation30.plusflowlinevaa_nav USING GIN(ary_downstream_hydroseq gin__int_ops)
+TABLESPACE nhdplus_data;
+
+CREATE INDEX plusflowlinevaa_nav_10i
+ON nhdplus_navigation30.plusflowlinevaa_nav(headwater)
+TABLESPACE nhdplus_data;
+
+CREATE INDEX plusflowlinevaa_nav_11i
+ON nhdplus_navigation30.plusflowlinevaa_nav(coastal_connection)
 TABLESPACE nhdplus_data;
 
 --VACUUM FREEZE ANALYZE nhdplus_navigation30.plusflowlinevaa_nav;
