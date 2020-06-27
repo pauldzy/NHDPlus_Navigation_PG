@@ -48,11 +48,12 @@ BEGIN
       num_trim        := p_network_flowtimeday - p_maximum_flowtime_day;
       
    END IF;
-   
-   IF num_trim > 0
+
+   IF  num_trim > 0
+   AND num_ratio > 0
    THEN
       num_trim_meas := num_trim / num_ratio;
-
+   
       IF p_search_type IN ('UT','UM')
       THEN
          num_tmeasure := ROUND(p_tmeasure - num_trim_meas,5);

@@ -62,7 +62,7 @@ BEGIN
       IF p_measure IS NULL
       THEN
          SELECT 
-          a.nhdplus_comid
+          a.comid
          ,a.permanent_identifier
          ,a.reachcode
          ,a.fcode
@@ -86,10 +86,10 @@ BEGIN
          ,a.flowtimeday
          ,a.flowtimeday / (a.tmeasure - a.fmeasure)
          ,b.pathlength
-         ,b.pathtime 
+         ,b.pathtimema
          ,b.fromnode
          ,b.tonode
-         ,a.nhdplus_region
+         ,a.vpuid
          ,NULL
          ,NULL
          ,NULL
@@ -103,9 +103,9 @@ BEGIN
          LEFT JOIN
          nhdplus.plusflowlinevaa_np21 b
          ON
-         a.nhdplus_comid = b.comid
+         a.comid = b.comid
          WHERE
-            a.nhdplus_comid        = p_comid
+            a.comid                = p_comid
          OR a.permanent_identifier = p_permanent_identifier
          OR a.hydroseq             = p_hydrosequence;
 
@@ -130,7 +130,7 @@ BEGIN
          
       ELSE
          SELECT 
-          a.nhdplus_comid
+          a.comid
          ,a.permanent_identifier
          ,a.reachcode
          ,a.fcode
@@ -154,10 +154,10 @@ BEGIN
          ,a.flowtimeday
          ,a.flowtimeday / (a.tmeasure - a.fmeasure)
          ,b.pathlength
-         ,b.pathtime 
+         ,b.pathtimema 
          ,b.fromnode
          ,b.tonode
-         ,a.nhdplus_region
+         ,a.vpuid
          ,NULL
          ,NULL
          ,NULL
@@ -171,9 +171,9 @@ BEGIN
          LEFT JOIN
          nhdplus.plusflowlinevaa_np21 b
          ON
-         a.nhdplus_comid = b.comid
+         a.comid = b.comid
          WHERE (
-               a.nhdplus_comid        = p_comid
+               a.comid                = p_comid
             OR a.permanent_identifier = p_permanent_identifier
             OR a.hydroseq             = p_hydrosequence
          ) AND (
@@ -236,7 +236,7 @@ BEGIN
       IF p_measure IS NULL
       THEN
          SELECT 
-          a.nhdplus_comid
+          a.comid
          ,a.permanent_identifier
          ,a.reachcode
          ,a.fcode
@@ -260,10 +260,10 @@ BEGIN
          ,a.flowtimeday
          ,a.flowtimeday / (a.tmeasure - a.fmeasure)
          ,b.pathlength
-         ,b.pathtime 
+         ,b.pathtimema 
          ,b.fromnode
          ,b.tonode
-         ,a.nhdplus_region
+         ,a.vpuid
          ,NULL
          ,NULL
          ,NULL
@@ -277,7 +277,7 @@ BEGIN
          LEFT JOIN
          nhdplus.plusflowlinevaa_np21 b
          ON
-         a.nhdplus_comid = b.comid
+         a.comid = b.comid
          WHERE 
              a.reachcode = p_reachcode 
          AND (
@@ -311,7 +311,7 @@ BEGIN
          
       ELSE
          SELECT 
-          a.nhdplus_comid
+          a.comid
          ,a.permanent_identifier
          ,a.reachcode
          ,a.fcode
@@ -335,10 +335,10 @@ BEGIN
          ,a.flowtimeday
          ,a.flowtimeday / (a.tmeasure - a.fmeasure)
          ,b.pathlength
-         ,b.pathtime 
+         ,b.pathtimema
          ,b.fromnode
          ,b.tonode
-         ,a.nhdplus_region
+         ,a.vpuid
          ,NULL
          ,NULL
          ,NULL
@@ -352,7 +352,7 @@ BEGIN
          LEFT JOIN
          nhdplus.plusflowlinevaa_np21 b
          ON
-         a.nhdplus_comid = b.comid
+         a.comid = b.comid
          WHERE 
              a.reachcode = p_reachcode 
          AND (

@@ -135,6 +135,26 @@ BEGIN
    
    IF pReturnCode <> 0
    THEN
+      IF pReturnCode = -10
+      THEN
+         pStatusMessage := 'Flowline ' || COALESCE(
+             pStartComID::VARCHAR
+            ,pStartPermanentIdentifier
+            ,pStartReachCode
+            ,pStartHydroSequence::VARCHAR
+            ,'err'
+         );
+         
+         IF pStartMeasure IS NOT NULL
+         THEN
+            pStatusMessage := pStatusMessage || ' at measure ' || pStartMeasure::VARCHAR;
+            
+         END IF;
+         
+         pStatusMessage := pStatusMessage || ' not found in NHDPlus stream network.';
+         
+      END IF;
+      
       UPDATE nhdplus_navigation30.tmp_navigation_status a
       SET
        return_code    = pReturnCode
@@ -145,7 +165,7 @@ BEGIN
       RETURN;
       
    END IF;
-   
+
    IF r.p_flowline IS NULL
    THEN
       RAISE EXCEPTION 'start get flowline returned no results';
@@ -155,17 +175,35 @@ BEGIN
    obj_start_flowline := r.p_flowline;
    pOutGridSRID := obj_start_flowline.out_grid_srid;
    
-   IF obj_start_flowline.navigable = 'N'
+   IF obj_start_flowline.innetwork = 'N'
    THEN
+      pReturnCode    := -22;
+      pStatusMessage := 'Start flowline is not part of the NHDPlus network.';
+      
       UPDATE nhdplus_navigation30.tmp_navigation_status a
       SET
-       return_code    = -22
-      ,status_message = 'Start flowline is not part of the NHDPlus network.'
+       return_code    = pReturnCode
+      ,status_message = pStatusMessage
       WHERE
       a.session_id = pSessionID;
       
       RETURN;
    
+   ELSIF num_maximum_flowtime_day IS NOT NULL
+   AND   obj_start_flowline.flowtimeday IS NULL
+   THEN
+      pReturnCode    := -23;
+      pStatusMessage := 'Start flowline is tidal without flow time information.';
+      
+      UPDATE nhdplus_navigation30.tmp_navigation_status a
+      SET
+       return_code    = pReturnCode
+      ,status_message = pStatusMessage
+      WHERE
+      a.session_id = pSessionID;
+      
+      RETURN;
+      
    END IF;
 
    ----------------------------------------------------------------------------
@@ -184,7 +222,7 @@ BEGIN
       );
       pReturnCode       := r.p_return_code;
       pStatusMessage    := r.p_status_message;
-      
+
       IF pReturnCode <> 0
       THEN
          UPDATE nhdplus_navigation30.tmp_navigation_status a
@@ -205,51 +243,42 @@ BEGIN
       END IF;
       
       obj_stop_flowline := r.p_flowline;
-      
-      IF obj_stop_flowline.navigable = 'N'
+
+      IF obj_stop_flowline.innetwork = 'N'
       THEN
+         pReturnCode    := -22;
+         pStatusMessage := 'Stop flowline is not part of the NHDPlus network.';
+      
          UPDATE nhdplus_navigation30.tmp_navigation_status a
          SET
-          return_code    = -22
-         ,status_message = 'Stop flowline is not part of the NHDPlus network.'
+          return_code    = pReturnCode
+         ,status_message = pStatusMessage 
          WHERE
          a.session_id = pSessionID;
          
          RETURN;
       
+      ELSIF num_maximum_flowtime_day IS NOT NULL
+      AND   obj_stop_flowline.flowtimeday IS NULL
+      THEN
+         pReturnCode    := -23;
+         pStatusMessage := 'Stop flowline is tidal without flow time information.';
+         
+         UPDATE nhdplus_navigation30.tmp_navigation_status a
+         SET
+          return_code    = pReturnCode
+         ,status_message = pStatusMessage
+         WHERE
+         a.session_id = pSessionID;
+         
+         RETURN;
+         
       END IF;
       
    END IF;
 
    ----------------------------------------------------------------------------
    -- Step 60
-   -- Abend if start or stop is coastal
-   ----------------------------------------------------------------------------
-   IF obj_start_flowline.fcode = 56600
-   OR obj_stop_flowline.fcode  = 56600
-   THEN
-      pReturnCode      := -56600;
-      pStatusMessage   := 'Navigation from or to coastal flowlines is not valid.';
-      
-      pOutStartComID   := obj_start_flowline.comid;
-      pOutStartMeasure := obj_start_flowline.out_measure;
-      pOutStartPermanentIdentifier := obj_start_flowline.permanent_identifier;
-      pOutStopComID    := obj_stop_flowline.comid;
-      pOutStopMeasure  := obj_stop_flowline.out_measure;
-      
-      UPDATE nhdplus_navigation30.tmp_navigation_status a
-      SET
-       return_code    = pReturnCode
-      ,status_message = pStatusMessage
-      WHERE
-      a.session_id = pSessionID;
-   
-      RETURN;
-   
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Step 70
    -- Turn PP around if stop above start
    ----------------------------------------------------------------------------
    IF obj_stop_flowline.hydrosequence > obj_start_flowline.hydrosequence
@@ -285,6 +314,27 @@ BEGIN
    pOutStartMeasure             := obj_start_flowline.out_measure;
    pOutStopComID                := obj_stop_flowline.comid;
    pOutStopMeasure              := obj_stop_flowline.out_measure;
+
+   ----------------------------------------------------------------------------
+   -- Step 70
+   -- Abend if start or stop is coastal
+   ----------------------------------------------------------------------------
+   IF obj_start_flowline.fcode = 56600
+   OR obj_stop_flowline.fcode  = 56600
+   THEN
+      pReturnCode      := -56600;
+      pStatusMessage   := 'Navigation from or to coastal flowlines is not valid.';
+      
+      UPDATE nhdplus_navigation30.tmp_navigation_status a
+      SET
+       return_code    = pReturnCode
+      ,status_message = pStatusMessage
+      WHERE
+      a.session_id = pSessionID;
+   
+      RETURN;
+   
+   END IF;
 
    ----------------------------------------------------------------------------
    -- Step 80

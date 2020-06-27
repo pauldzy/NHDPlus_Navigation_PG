@@ -1,4 +1,4 @@
-DROP MATERIALIZED VIEW nhdplus_navigation30.plusflowlinevaa_nav;
+DROP MATERIALIZED VIEW IF EXISTS nhdplus_navigation30.plusflowlinevaa_nav;
 
 CREATE MATERIALIZED VIEW nhdplus_navigation30.plusflowlinevaa_nav(
     comid
@@ -22,6 +22,7 @@ CREATE MATERIALIZED VIEW nhdplus_navigation30.plusflowlinevaa_nav(
    ,ary_downstream_hydroseq
    ,headwater
    ,coastal_connection
+   ,network_end
 )
 TABLESPACE nhdplus_data
 AS
@@ -33,9 +34,21 @@ SELECT
 ,a.fmeasure
 ,a.tmeasure
 ,a.lengthkm
-,a.totma
+,CASE
+ WHEN a.totma = -9999
+ THEN
+   NULL
+ ELSE
+   a.totma
+ END AS totma
 ,a.pathlength
-,a.pathtimema
+,CASE
+ WHEN a.pathtimema = -9999
+ THEN
+   NULL
+ ELSE
+   a.pathtimema
+ END AS pathtimema
 ,CASE
  WHEN a.uphydroseq = 0
  THEN
@@ -190,12 +203,19 @@ SELECT
    CAST('N' AS VARCHAR(1))
  END AS headwater
 ,CASE
- WHEN EXISTS (SELECT 1 FROM nhdplus.plusflow_np21 d WHERE d.fromhydroseq = a.hydroseq AND d.direction = 714 )
+ WHEN EXISTS (SELECT 1 FROM nhdplus.plusflow_np21 d WHERE d.fromhydroseq = a.hydroseq AND d.direction = 714)
  THEN
    CAST('Y' AS VARCHAR(1))
  ELSE
    CAST('N' AS VARCHAR(1))
  END AS coastal_connection
+,CASE
+ WHEN EXISTS (SELECT 1 FROM nhdplus.plusflow_np21 d WHERE d.fromhydroseq = a.hydroseq AND d.direction = 713)
+ THEN
+   CAST('Y' AS VARCHAR(1))
+ ELSE
+   CAST('N' AS VARCHAR(1))
+ END AS network_end
 FROM
 nhdplus.plusflowlinevaa_np21 a
 WHERE
@@ -264,6 +284,10 @@ TABLESPACE nhdplus_data;
 
 CREATE INDEX plusflowlinevaa_nav_11i
 ON nhdplus_navigation30.plusflowlinevaa_nav(coastal_connection)
+TABLESPACE nhdplus_data;
+
+CREATE INDEX plusflowlinevaa_nav_12i
+ON nhdplus_navigation30.plusflowlinevaa_nav(network_end)
 TABLESPACE nhdplus_data;
 
 --VACUUM FREEZE ANALYZE nhdplus_navigation30.plusflowlinevaa_nav;

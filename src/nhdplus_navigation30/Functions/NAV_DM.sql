@@ -6,11 +6,10 @@ CREATE OR REPLACE FUNCTION nhdplus_navigation30.nav_dm(
 VOLATILE
 AS $BODY$
 DECLARE
-   
    int_count INTEGER;
    
 BEGIN
-
+   
    ----------------------------------------------------------------------------
    -- Step 10
    -- Return total count of results
@@ -73,7 +72,11 @@ BEGIN
       )
       AND (
             num_maximum_flowtime_day IS NULL
-         OR dm.network_flowtimeday <= num_maximum_flowtime_day
+         OR ( 
+            mq.totma IS NOT NULL
+            AND
+            dm.network_flowtimeday <= num_maximum_flowtime_day
+         )
       )
    )
    INSERT INTO tmp_navigation_working30(
@@ -103,7 +106,7 @@ BEGIN
    dm a;
    
    GET DIAGNOSTICS int_count = ROW_COUNT;
-   
+
    ----------------------------------------------------------------------------
    -- Step 20
    -- Tag the nav termination flags
@@ -112,6 +115,7 @@ BEGIN
       SELECT
        a.hydrosequence
       ,b.coastal_connection
+      ,b.network_end
       FROM
       tmp_navigation_working30 a
       JOIN
@@ -130,6 +134,9 @@ BEGIN
       WHEN cte.coastal_connection = 'Y'
       THEN
          3
+      WHEN cte.network_end = 'Y'
+      THEN
+         5
       ELSE
          1
       END

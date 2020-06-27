@@ -53,7 +53,7 @@ BEGIN
    SELECT
     nextval('nhdplus_navigation30.tmp_navigation_results_seq')
    ,pSessionID
-   ,a.nhdplus_comid
+   ,a.comid
    ,a.permanent_identifier
    ,a.reachcode
    ,a.fmeasure
@@ -82,7 +82,7 @@ BEGIN
    ,a.gnis_id
    ,a.gnis_name
    ,a.wbarea_permanent_identifier
-   ,a.wbarea_nhdplus_comid
+   ,a.wbarea_comid
    ,a.wbd_huc12
    ,a.catchment_featureid
    ,a.navigable
@@ -97,7 +97,7 @@ BEGIN
    ON
    a.fcode = b.fcode
    WHERE
-   a.nhdplus_comid = pComID;
+   a.comid = pComID;
    
    RETURN TRUE;
 

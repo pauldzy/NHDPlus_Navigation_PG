@@ -471,8 +471,11 @@ BEGIN
    WITH cte AS ( 
       SELECT
        a.hydrosequence
+      ,a.fmeasure
+      ,a.tmeasure
       ,b.ary_downstream_hydroseq
       ,b.coastal_connection
+      ,b.network_end
       FROM
       tmp_navigation_working30 a
       JOIN
@@ -500,6 +503,9 @@ BEGIN
             WHEN cte.coastal_connection = 'Y'
             THEN
                3
+            WHEN cte.network_end = 'Y'
+            THEN
+               5
             ELSE
                1
             END
