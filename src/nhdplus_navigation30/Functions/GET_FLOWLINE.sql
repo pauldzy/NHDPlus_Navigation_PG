@@ -12,7 +12,7 @@ CREATE OR REPLACE FUNCTION nhdplus_navigation30.get_flowline(
 STABLE
 AS $BODY$ 
 DECLARE
-   str_direction      VARCHAR(2) := UPPER(p_direction);
+   str_direction      VARCHAR(5) := UPPER(p_direction);
    num_difference     NUMERIC;
    num_end_of_line    NUMERIC := 0.0001;
    
@@ -39,7 +39,7 @@ BEGIN
    THEN
       str_direction := 'U';
       
-   ELSIF str_direction IN ('DD','DM','PP')
+   ELSIF str_direction IN ('DD','DM','PP','PPALL')
    THEN
       str_direction := 'D';
       

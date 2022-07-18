@@ -13,6 +13,10 @@ BEGIN
    IF str_input IN ('PP','POINT TO POINT','POINT-TO-POINT')
    THEN
       RETURN 'PP';
+      
+   ELSIF str_input IN ('PPALL')
+   THEN
+      RETURN 'PPALL';
    
    ELSIF str_input IN ('UT','UPSTREAM WITH TRIBUTARIES')
    THEN

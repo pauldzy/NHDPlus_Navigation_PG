@@ -49,14 +49,14 @@ BEGIN
       p_input := pSearchType
    );
 
-   IF str_search_type NOT IN ('UM','UT','DM','DD','PP')
+   IF str_search_type NOT IN ('UM','UT','DM','DD','PP','PPALL')
    THEN
       pReturnCode    := -1;
       pStatusMessage := 'Valid SearchType codes are UM, UT, DM, DD and PP.';
 
    END IF;
 
-   IF str_search_type = 'PP'
+   IF str_search_type IN ('PP','PPALL')
    THEN
       num_maximum_distance_km  := NULL;
       num_maximum_flowtime_day := NULL;
@@ -94,7 +94,7 @@ BEGIN
       ) VALUES (
           NEXTVAL('nhdplus_navigation30.tmp_navigation_status_seq')
          ,pSessionID
-         ,(ABSTIME((CLOCK_TIMESTAMP()::TEXT)::TIMESTAMP(6) WITH TIME ZONE))
+         ,CLOCK_TIMESTAMP()
       );
 
    END IF;
@@ -210,7 +210,7 @@ BEGIN
    -- Step 50
    -- Get the stop flowline
    ----------------------------------------------------------------------------
-   IF str_search_type = 'PP'
+   IF str_search_type IN ('PP','PPALL')
    THEN
       r := nhdplus_navigation30.get_flowline(
           p_direction            := 'U'
@@ -361,6 +361,13 @@ BEGIN
       IF str_search_type = 'PP'
       THEN
          int_counter := nhdplus_navigation30.nav_pp(
+             obj_start_flowline       := obj_start_flowline
+            ,obj_stop_flowline        := obj_stop_flowline
+         );
+         
+      ELSIF str_search_type = 'PPALL'
+      THEN
+         int_counter := nhdplus_navigation30.nav_ppall(
              obj_start_flowline       := obj_start_flowline
             ,obj_stop_flowline        := obj_stop_flowline
          );
